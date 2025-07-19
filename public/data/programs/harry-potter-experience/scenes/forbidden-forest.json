@@ -1,0 +1,293 @@
+{
+  "id": "forbidden-forest",
+  "name": "Forbidden Forest",
+  "description": "A dark, mysterious forest filled with magical creatures and ancient trees",
+  "duration": 120,
+  "environment": {
+    "backgroundColor": {
+      "r": 0.05,
+      "g": 0.1,
+      "b": 0.15
+    },
+    "fog": {
+      "color": {
+        "r": 0.1,
+        "g": 0.15,
+        "b": 0.2
+      },
+      "near": 5,
+      "far": 50,
+      "density": 0.02
+    }
+  },
+  "walls": [
+    {
+      "id": 1,
+      "name": "North Wall",
+      "direction": "north",
+      "camera": {
+        "position": { "x": 0, "y": 2, "z": 0 },
+        "target": { "x": 0, "y": 2, "z": -10 },
+        "fov": 75,
+        "near": 0.1,
+        "far": 100
+      }
+    },
+    {
+      "id": 2,
+      "name": "East Wall",
+      "direction": "east",
+      "camera": {
+        "position": { "x": 0, "y": 2, "z": 0 },
+        "target": { "x": 10, "y": 2, "z": 0 },
+        "fov": 75,
+        "near": 0.1,
+        "far": 100
+      }
+    },
+    {
+      "id": 3,
+      "name": "South Wall",
+      "direction": "south",
+      "camera": {
+        "position": { "x": 0, "y": 2, "z": 0 },
+        "target": { "x": 0, "y": 2, "z": 10 },
+        "fov": 75,
+        "near": 0.1,
+        "far": 100
+      }
+    },
+    {
+      "id": 4,
+      "name": "West Wall",
+      "direction": "west",
+      "camera": {
+        "position": { "x": 0, "y": 2, "z": 0 },
+        "target": { "x": -10, "y": 2, "z": 0 },
+        "fov": 75,
+        "near": 0.1,
+        "far": 100
+      }
+    }
+  ],
+  "layers": [
+    {
+      "id": "background-trees",
+      "name": "Background Trees",
+      "visible": true,
+      "opacity": 1.0,
+      "renderOrder": 1,
+      "models": [
+        {
+          "id": "tree-north-1",
+          "src": "/models/trees/oak-tree.glb",
+          "position": { "x": -5, "y": 0, "z": -15 },
+          "rotation": { "x": 0, "y": 0.3, "z": 0 },
+          "scale": { "x": 1.2, "y": 1.2, "z": 1.2 },
+          "castShadow": true,
+          "receiveShadow": true
+        },
+        {
+          "id": "tree-north-2",
+          "src": "/models/trees/pine-tree.glb",
+          "position": { "x": 3, "y": 0, "z": -18 },
+          "rotation": { "x": 0, "y": -0.5, "z": 0 },
+          "scale": { "x": 1.5, "y": 1.5, "z": 1.5 },
+          "castShadow": true,
+          "receiveShadow": true
+        },
+        {
+          "id": "tree-east-1",
+          "src": "/models/trees/oak-tree.glb",
+          "position": { "x": 15, "y": 0, "z": -3 },
+          "rotation": { "x": 0, "y": 1.2, "z": 0 },
+          "scale": { "x": 1.3, "y": 1.3, "z": 1.3 },
+          "castShadow": true,
+          "receiveShadow": true
+        },
+        {
+          "id": "tree-south-1",
+          "src": "/models/trees/pine-tree.glb",
+          "position": { "x": -2, "y": 0, "z": 16 },
+          "rotation": { "x": 0, "y": 2.1, "z": 0 },
+          "scale": { "x": 1.4, "y": 1.4, "z": 1.4 },
+          "castShadow": true,
+          "receiveShadow": true
+        },
+        {
+          "id": "tree-west-1",
+          "src": "/models/trees/oak-tree.glb",
+          "position": { "x": -16, "y": 0, "z": 4 },
+          "rotation": { "x": 0, "y": -1.8, "z": 0 },
+          "scale": { "x": 1.1, "y": 1.1, "z": 1.1 },
+          "castShadow": true,
+          "receiveShadow": true
+        }
+      ]
+    },
+    {
+      "id": "lighting",
+      "name": "Scene Lighting",
+      "visible": true,
+      "opacity": 1.0,
+      "renderOrder": 0,
+      "lights": [
+        {
+          "id": "moonlight",
+          "type": "directional",
+          "color": { "r": 0.7, "g": 0.8, "b": 1.0 },
+          "intensity": 0.5,
+          "position": { "x": -10, "y": 20, "z": -10 },
+          "target": { "x": 0, "y": 0, "z": 0 },
+          "castShadow": true
+        },
+        {
+          "id": "ambient-darkness",
+          "type": "ambient",
+          "color": { "r": 0.1, "g": 0.1, "b": 0.2 },
+          "intensity": 0.3
+        },
+        {
+          "id": "mystical-glow",
+          "type": "point",
+          "color": { "r": 0.3, "g": 0.6, "b": 1.0 },
+          "intensity": 0.8,
+          "position": { "x": 0, "y": 3, "z": -8 },
+          "distance": 15
+        }
+      ]
+    },
+    {
+      "id": "fog-particles",
+      "name": "Atmospheric Fog",
+      "visible": true,
+      "opacity": 0.6,
+      "renderOrder": 3,
+      "particles": [
+        {
+          "id": "forest-fog",
+          "type": "fog",
+          "count": 500,
+          "position": { "x": 0, "y": 1, "z": 0 },
+          "area": { "x": 40, "y": 8, "z": 40 },
+          "speed": 0.2,
+          "color": { "r": 0.8, "g": 0.9, "b": 1.0 },
+          "opacity": 0.3,
+          "size": 2.0
+        }
+      ]
+    },
+    {
+      "id": "magical-creatures",
+      "name": "Magical Creatures",
+      "visible": false,
+      "opacity": 1.0,
+      "renderOrder": 2,
+      "models": [
+        {
+          "id": "unicorn",
+          "src": "/models/creatures/unicorn.glb",
+          "position": { "x": -8, "y": 0, "z": -12 },
+          "rotation": { "x": 0, "y": 0.5, "z": 0 },
+          "scale": { "x": 1.0, "y": 1.0, "z": 1.0 },
+          "animations": ["idle", "walk"],
+          "castShadow": true,
+          "receiveShadow": true
+        }
+      ],
+      "particles": [
+        {
+          "id": "fireflies",
+          "type": "fireflies",
+          "count": 50,
+          "position": { "x": 0, "y": 2, "z": 0 },
+          "area": { "x": 30, "y": 6, "z": 30 },
+          "speed": 0.5,
+          "color": { "r": 1.0, "g": 1.0, "b": 0.8 },
+          "opacity": 0.8,
+          "size": 0.3
+        }
+      ]
+    }
+  ],
+  "modifiers": [
+    {
+      "id": "time_of_day",
+      "name": "Time of Day",
+      "description": "Change the lighting to simulate different times",
+      "type": "select",
+      "default": "night",
+      "options": ["dawn", "day", "dusk", "night"],
+      "affects": ["lighting"]
+    },
+    {
+      "id": "fog_density",
+      "name": "Fog Density",
+      "description": "Control the thickness of the fog",
+      "type": "number",
+      "default": 0.6,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.1,
+      "affects": ["fog-particles"]
+    },
+    {
+      "id": "show_creatures",
+      "name": "Show Creatures",
+      "description": "Toggle magical creatures visibility",
+      "type": "boolean",
+      "default": false,
+      "affects": ["magical-creatures"]
+    },
+    {
+      "id": "wind_strength",
+      "name": "Wind Strength",
+      "description": "Control the wind animation intensity",
+      "type": "number",
+      "default": 1.0,
+      "min": 0.0,
+      "max": 3.0,
+      "step": 0.1,
+      "affects": ["background-trees"]
+    },
+    {
+      "id": "mystical_intensity",
+      "name": "Mystical Glow",
+      "description": "Control the magical atmosphere intensity",
+      "type": "number",
+      "default": 0.8,
+      "min": 0.0,
+      "max": 2.0,
+      "step": 0.1,
+      "affects": ["lighting"]
+    }
+  ],
+  "timeline": {
+    "events": [
+      {
+        "time": 10,
+        "action": "show",
+        "target": "fireflies",
+        "parameters": { "fadeIn": 3 }
+      },
+      {
+        "time": 30,
+        "action": "audio",
+        "target": "owl-hoot",
+        "parameters": { "volume": 0.7 }
+      },
+      {
+        "time": 60,
+        "action": "animate",
+        "target": "unicorn",
+        "parameters": { "animation": "walk", "duration": 10 }
+      },
+      {
+        "time": 90,
+        "action": "audio",
+        "target": "wolf-howl",
+        "parameters": { "volume": 0.5, "delay": 2 }
+      }
+    ]
+  }
+}
