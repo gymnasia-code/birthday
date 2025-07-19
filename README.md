@@ -62,6 +62,32 @@ This project includes GitHub Actions for automatic deployment when you push to t
 
 The workflow will automatically build and deploy your app to Cloudflare Pages on every push to the `main` branch!
 
+## Custom Domain Setup
+
+This project is configured to deploy to **bd.gymnasia.ge**. To set up the custom domain:
+
+### 1. **Add Domain to Cloudflare**
+- Ensure `gymnasia.ge` is added to your Cloudflare account
+- DNS should be managed by Cloudflare
+
+### 2. **Configure Pages Custom Domain**
+- Go to [Cloudflare Dashboard](https://dash.cloudflare.com/) → Pages
+- Select your `birthday-app` project
+- Go to "Custom domains" tab
+- Click "Set up a custom domain"
+- Add `bd.gymnasia.ge`
+- Cloudflare will automatically create the necessary DNS records
+
+### 3. **DNS Configuration**
+Cloudflare will automatically add a CNAME record:
+```
+bd.gymnasia.ge → birthday-app.pages.dev
+```
+
+### 4. **SSL Certificate**
+- SSL certificate will be automatically provisioned
+- Usually takes 10-15 minutes to activate
+
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.

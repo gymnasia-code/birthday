@@ -10,6 +10,15 @@
     "NODE_ENV": "production"
   }
   
+  // Custom domain configuration
+  // Note: Domain must be added to your Cloudflare account and configured in Pages dashboard
+  // "routes": [
+  //   {
+  //     "pattern": "bd.gymnasia.ge/*",
+  //     "custom_domain": true
+  //   }
+  // ],
+  
   // Uncomment and configure these services as needed:
   
   // KV namespaces for key-value storage
