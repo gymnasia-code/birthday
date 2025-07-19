@@ -1,0 +1,45 @@
+{
+  // Cloudflare Pages configuration for Next.js Birthday app
+  "name": "birthday-app",
+  "compatibility_date": "2025-07-19",
+  "compatibility_flags": ["nodejs_compat"],
+  "pages_build_output_dir": ".vercel/output/static",
+  
+  // Environment variables (add your own as needed)
+  "vars": {
+    "NODE_ENV": "production"
+  }
+  
+  // Uncomment and configure these services as needed:
+  
+  // KV namespaces for key-value storage
+  // "kv_namespaces": [
+  //   {
+  //     "binding": "MY_KV_NAMESPACE",
+  //     "id": "your-kv-namespace-id",
+  //     "preview_id": "your-preview-kv-namespace-id"
+  //   }
+  // ],
+  
+  // D1 databases for SQL storage
+  // "d1_databases": [
+  //   {
+  //     "binding": "DB",
+  //     "database_name": "birthday-db",
+  //     "database_id": "your-database-id"
+  //   }
+  // ],
+  
+  // R2 buckets for object storage
+  // "r2_buckets": [
+  //   {
+  //     "binding": "MY_BUCKET",
+  //     "bucket_name": "birthday-assets"
+  //   }
+  // ],
+  
+  // Workers AI for AI features
+  // "ai": {
+  //   "binding": "AI"
+  // }
+}

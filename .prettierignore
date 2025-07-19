@@ -1,0 +1,25 @@
+# Dependencies
+node_modules/
+pnpm-lock.yaml
+
+# Build outputs
+.next/
+.vercel/
+out/
+dist/
+
+# Cache
+.cache/
+
+# Public assets
+public/
+
+# Config files (optional - remove if you want these formatted)
+next-env.d.ts
+wrangler.jsonc
+
+# Logs
+*.log
+
+# Environment files
+.env*

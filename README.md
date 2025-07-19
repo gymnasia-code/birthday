@@ -1,18 +1,66 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app) and configured for [Cloudflare Pages](https://pages.cloudflare.com/).
 
 ## Getting Started
 
-First, run the development server:
+This project uses **pnpm** as the package manager. First, run the development server:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
 pnpm dev
-# or
-bun dev
 ```
+
+> **Note**: You may see a warning about multiple lockfiles due to a `package-lock.json` in a parent directory. This can be safely ignored as the project is configured to use pnpm.
+
+## Cloudflare Pages Deployment
+
+### Manual Deployment
+
+This project is configured to deploy on Cloudflare Pages with the Edge Runtime:
+
+```bash
+# Build for Cloudflare Pages
+pnpm pages:build
+
+# Preview locally with Wrangler
+pnpm pages:preview
+
+# Deploy to Cloudflare Pages
+pnpm pages:deploy
+```
+
+### Automatic Deployment with GitHub Actions
+
+This project includes GitHub Actions for automatic deployment when you push to the `main` branch.
+
+#### Setup Instructions:
+
+1. **Get your Cloudflare API Token:**
+   - Go to [Cloudflare API Tokens](https://dash.cloudflare.com/profile/api-tokens)
+   - Click "Create Token"
+   - Use the "Cloudflare Pages:Edit" template
+   - Or create a custom token with these permissions:
+     - `Account:Cloudflare Pages:Edit`
+     - `Zone:Zone Settings:Read`
+     - `Zone:Zone:Read`
+
+2. **Get your Cloudflare Account ID:**
+   - Go to your [Cloudflare Dashboard](https://dash.cloudflare.com/)
+   - Copy the Account ID from the right sidebar
+
+3. **Add GitHub Secrets:**
+   - Go to your GitHub repository
+   - Navigate to Settings → Secrets and variables → Actions
+   - Add these repository secrets:
+     - `CLOUDFLARE_API_TOKEN`: Your API token from step 1
+     - `CLOUDFLARE_ACCOUNT_ID`: Your account ID from step 2
+
+4. **Push to GitHub:**
+   ```bash
+   git add .
+   git commit -m "Add GitHub Actions deployment"
+   git push origin main
+   ```
+
+The workflow will automatically build and deploy your app to Cloudflare Pages on every push to the `main` branch!
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 

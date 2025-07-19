@@ -1,7 +1,13 @@
-import type { NextConfig } from "next";
+import { setupDevPlatform } from '@cloudflare/next-on-pages/next-dev'
+import type { NextConfig } from 'next'
+
+// Setup development platform for Cloudflare compatibility
+if (process.env.NODE_ENV === 'development') {
+  setupDevPlatform()
+}
 
 const nextConfig: NextConfig = {
-  /* config options here */
-};
+  // Configuration for Cloudflare Pages
+}
 
-export default nextConfig;
+export default nextConfig
