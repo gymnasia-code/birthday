@@ -56,6 +56,7 @@ export default function LayerRenderer({
     <group
       name={`layer-${layer.id}`}
       userData={{ layerId: layer.id, wallDirection }}
+      renderOrder={layer.renderOrder}
     >
       {/* Render Models */}
       {layer.models?.map(model => (
@@ -80,15 +81,26 @@ export default function LayerRenderer({
       ))}
 
       {/* Render Particles */}
-      {layer.particles?.map(particles => (
-        <ParticleRenderer
-          key={particles.id}
-          particles={particles}
-          modifiers={modifiers}
-          currentTime={currentTime}
-          layerOpacity={opacity}
-        />
-      ))}
+      {layer.particles?.map(particles => {
+        if (particles.type === 'shooting-star') {
+          console.log('🌟 LayerRenderer rendering shooting star:', {
+            layerId: layer.id,
+            particleId: particles.id,
+            layerVisible: isVisible,
+            layerOpacity: opacity,
+            particleOpacity: particles.opacity,
+          })
+        }
+        return (
+          <ParticleRenderer
+            key={particles.id}
+            particles={particles}
+            modifiers={modifiers}
+            currentTime={currentTime}
+            layerOpacity={opacity}
+          />
+        )
+      })}
     </group>
   )
 }

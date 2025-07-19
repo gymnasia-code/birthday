@@ -1,0 +1,162 @@
+{
+  "id": "solar-system",
+  "name": "Night Sky",
+  "description": "A beautiful night sky as seen from Earth.",
+  "duration": 120000,
+  "environment": {
+    "backgroundColor": {
+      "r": 0.0,
+      "g": 0.0,
+      "b": 0.0
+    }
+  },
+  "walls": [
+    {
+      "id": 1,
+      "name": "North Wall",
+      "direction": "north",
+      "camera": {
+        "position": { "x": 0, "y": 5, "z": 15 },
+        "target": { "x": 0, "y": 0, "z": 0 },
+        "fov": 60,
+        "near": 0.1,
+        "far": 500
+      }
+    },
+    {
+      "id": 2,
+      "name": "East Wall", 
+      "direction": "east",
+      "camera": {
+        "position": { "x": 15, "y": 5, "z": 0 },
+        "target": { "x": 0, "y": 0, "z": 0 },
+        "fov": 60,
+        "near": 0.1,
+        "far": 500
+      }
+    },
+    {
+      "id": 3,
+      "name": "South Wall",
+      "direction": "south", 
+      "camera": {
+        "position": { "x": 0, "y": 5, "z": -15 },
+        "target": { "x": 0, "y": 0, "z": 0 },
+        "fov": 60,
+        "near": 0.1,
+        "far": 500
+      }
+    },
+    {
+      "id": 4,
+      "name": "West Wall",
+      "direction": "west",
+      "camera": {
+        "position": { "x": -15, "y": 5, "z": 0 },
+        "target": { "x": 0, "y": 0, "z": 0 },
+        "fov": 60,
+        "near": 0.1,
+        "far": 500
+      }
+    }
+  ],
+  "modifiers": [
+    {
+      "id": "rotation_speed",
+      "name": "Rotation Speed",
+      "type": "number",
+      "default": 1.0,
+      "min": 0.1,
+      "max": 5.0,
+      "step": 0.1
+    },
+    {
+      "id": "planet_scale",
+      "name": "Planet Scale", 
+      "type": "number",
+      "default": 1.0,
+      "min": 0.5,
+      "max": 3.0,
+      "step": 0.1
+    }
+  ],
+  "layers": [
+    {
+      "id": "starfield",
+      "name": "Star Field",
+      "visible": true,
+      "opacity": 1.0,
+      "renderOrder": 1,
+      "particles": [
+        {
+          "id": "stars-main",
+          "type": "stars",
+          "count": 4000,
+          "position": { "x": 0, "y": 0, "z": 0 },
+          "area": { "x": 500, "y": 500, "z": 500 },
+          "speed": 0.005,
+          "color": { "r": 1.0, "g": 1.0, "b": 1.0 },
+          "opacity": 0.9,
+          "size": 0.08
+        },
+        {
+          "id": "stars-bright",
+          "type": "stars",
+          "count": 500,
+          "position": { "x": 0, "y": 0, "z": 0 },
+          "area": { "x": 500, "y": 500, "z": 500 },
+          "speed": 0.005,
+          "color": { "r": 1.0, "g": 1.0, "b": 0.9 },
+          "opacity": 1.0,
+          "size": 0.3
+        },
+        {
+          "id": "stars-faint",
+          "type": "stars",
+          "count": 6000,
+          "position": { "x": 0, "y": 0, "z": 0 },
+          "area": { "x": 600, "y": 600, "z": 600 },
+          "speed": 0.002,
+          "color": { "r": 0.8, "g": 0.9, "b": 1.0 },
+          "opacity": 0.5,
+          "size": 0.06
+        }
+      ]
+    },
+    {
+      "id": "comets",
+      "name": "Shooting Stars",
+      "visible": true,
+      "opacity": 1.0,
+      "renderOrder": 3,
+      "particles": [
+        {
+          "id": "shooting-star",
+          "type": "shooting-star",
+          "count": 20,
+          "position": { "x": 0, "y": 0, "z": 0 },
+          "area": { "x": 500, "y": 500, "z": 1 },
+          "speed": 40,
+          "color": { "r": 1.0, "g": 1.0, "b": 1.0 },
+          "opacity": 1.0,
+          "size": 0.7
+        }
+      ]
+    },
+    {
+      "id": "lighting",
+      "name": "Night Sky Lighting",
+      "visible": true,
+      "opacity": 1.0,
+      "renderOrder": 0,
+      "lights": [
+        {
+          "id": "ambient-night",
+          "type": "ambient",
+          "color": { "r": 0.1, "g": 0.1, "b": 0.15 },
+          "intensity": 0.2
+        }
+      ]
+    }
+  ]
+}

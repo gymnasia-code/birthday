@@ -1,8 +1,9 @@
 import React, { useRef, useMemo, useState, useEffect } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { useGLTF, useAnimations } from '@react-three/drei'
-import { Group, BoxGeometry, MeshStandardMaterial, Mesh } from 'three'
+import { Group } from 'three'
 import { ModelConfig, ModifierState } from '@/types/scene'
+import { createEnhancedFallback } from './PrimitiveComponents'
 
 // Hook for safe model loading that handles 404s gracefully
 function useSafeGLTF(url: string) {
@@ -25,6 +26,83 @@ function useSafeGLTF(url: string) {
   }
 }
 
+// Component for handling primitive geometries
+function PrimitiveModelRenderer({
+  model,
+  modifiers,
+  currentTime,
+  wallDirection,
+  primitiveType,
+}: {
+  model: ModelConfig
+  modifiers: ModifierState
+  currentTime: number
+  wallDirection: 'north' | 'south' | 'east' | 'west'
+  primitiveType: string
+}) {
+  const groupRef = useRef<Group>(null)
+
+  // Create primitive geometry
+  const primitiveMesh = useMemo(() => {
+    return createEnhancedFallback(model.id, 1)
+  }, [model.id])
+
+  // Calculate position based on modifiers and wall direction
+  const position = useMemo(() => {
+    let pos = [model.position.x, model.position.y, model.position.z]
+
+    // Apply wall-specific positioning
+    switch (wallDirection) {
+      case 'north':
+        break
+      case 'south':
+        pos[0] = -pos[0]
+        break
+      case 'east':
+        pos = [-pos[2], pos[1], pos[0]]
+        break
+      case 'west':
+        pos = [pos[2], pos[1], -pos[0]]
+        break
+    }
+
+    return pos as [number, number, number]
+  }, [model.position, wallDirection])
+
+  // Calculate scale
+  const scale = useMemo(() => {
+    return [model.scale.x, model.scale.y, model.scale.z] as [
+      number,
+      number,
+      number,
+    ]
+  }, [model.scale])
+
+  // Calculate rotation
+  const rotation = useMemo(() => {
+    if (!model.rotation) return [0, 0, 0] as [number, number, number]
+    return [model.rotation.x, model.rotation.y, model.rotation.z] as [
+      number,
+      number,
+      number,
+    ]
+  }, [model.rotation])
+
+  return (
+    <group
+      ref={groupRef}
+      position={position}
+      scale={scale}
+      rotation={rotation}
+      name={`model-${model.id}`}
+      castShadow={model.castShadow}
+      receiveShadow={model.receiveShadow}
+    >
+      {primitiveMesh}
+    </group>
+  )
+}
+
 interface ModelRendererProps {
   model: ModelConfig
   modifiers: ModifierState
@@ -40,26 +118,35 @@ export default function ModelRenderer({
 }: ModelRendererProps) {
   const groupRef = useRef<Group>(null)
 
-  // Safe model loading
+  // Check if this is a primitive geometry
+  const isPrimitive = model.src.startsWith('primitive:')
+  const primitiveType = isPrimitive ? model.src.replace('primitive:', '') : null
+
+  // For primitives, skip GLTF loading entirely
+  if (isPrimitive) {
+    return (
+      <PrimitiveModelRenderer
+        model={model}
+        modifiers={modifiers}
+        currentTime={currentTime}
+        wallDirection={wallDirection}
+        primitiveType={primitiveType!}
+      />
+    )
+  }
+
+  // Safe model loading (only for non-primitives)
   const { scene, animations, error } = useSafeGLTF(model.src)
   const { actions } = useAnimations(animations || [], groupRef)
 
   // Create fallback geometry for failed models
   const fallbackMesh = useMemo(() => {
     if (error || !scene) {
-      const geometry = new BoxGeometry(1, 2, 1)
-      const material = new MeshStandardMaterial({
-        color: model.id.includes('tree') ? 0x4a5c3a : 0x8b4513,
-        transparent: true,
-        opacity: 0.7,
-      })
-      const mesh = new Mesh(geometry, material)
-      mesh.castShadow = model.castShadow || false
-      mesh.receiveShadow = model.receiveShadow || false
-      return mesh
+      // Use enhanced primitives based on model type
+      return createEnhancedFallback(model.id, 1)
     }
     return null
-  }, [error, scene, model.id, model.castShadow, model.receiveShadow])
+  }, [error, scene, model.id])
 
   // Calculate position based on modifiers and wall direction
   const position = useMemo(() => {
@@ -219,7 +306,7 @@ export default function ModelRenderer({
           receiveShadow={model.receiveShadow}
         />
       ) : fallbackMesh ? (
-        <primitive object={fallbackMesh} />
+        fallbackMesh
       ) : (
         <mesh castShadow={model.castShadow} receiveShadow={model.receiveShadow}>
           <boxGeometry args={[1, 2, 1]} />

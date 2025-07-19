@@ -1,0 +1,177 @@
+{
+  "id": "deep-space",
+  "name": "Deep Space",
+  "description": "Journey into the depths of space with distant galaxies and cosmic phenomena",
+  "duration": 180000,
+  "environment": {
+    "backgroundColor": {
+      "r": 0.0,
+      "g": 0.0,
+      "b": 0.0
+    }
+  },
+  "walls": [
+    {
+      "id": 1,
+      "name": "North Wall",
+      "direction": "north",
+      "camera": {
+        "position": { "x": 0, "y": 10, "z": 30 },
+        "target": { "x": 0, "y": 0, "z": 0 },
+        "fov": 60,
+        "near": 0.1,
+        "far": 1000
+      }
+    },
+    {
+      "id": 2,
+      "name": "East Wall", 
+      "direction": "east",
+      "camera": {
+        "position": { "x": 30, "y": 10, "z": 0 },
+        "target": { "x": 0, "y": 0, "z": 0 },
+        "fov": 60,
+        "near": 0.1,
+        "far": 1000
+      }
+    },
+    {
+      "id": 3,
+      "name": "South Wall",
+      "direction": "south", 
+      "camera": {
+        "position": { "x": 0, "y": 10, "z": -30 },
+        "target": { "x": 0, "y": 0, "z": 0 },
+        "fov": 60,
+        "near": 0.1,
+        "far": 1000
+      }
+    },
+    {
+      "id": 4,
+      "name": "West Wall",
+      "direction": "west",
+      "camera": {
+        "position": { "x": -30, "y": 10, "z": 0 },
+        "target": { "x": 0, "y": 0, "z": 0 },
+        "fov": 60,
+        "near": 0.1,
+        "far": 1000
+      }
+    }
+  ],
+  "modifiers": [
+    {
+      "id": "star_density",
+      "name": "Star Density",
+      "type": "number",
+      "default": 1.0,
+      "min": 0.1,
+      "max": 3.0,
+      "step": 0.1
+    },
+    {
+      "id": "cosmic_scale",
+      "name": "Cosmic Scale", 
+      "type": "number",
+      "default": 1.0,
+      "min": 0.5,
+      "max": 2.0,
+      "step": 0.1
+    }
+  ],
+  "layers": [
+    {
+      "id": "deep-space-background",
+      "name": "Deep Space Background",
+      "visible": true,
+      "opacity": 1.0,
+      "renderOrder": 1,
+      "particles": [
+        {
+          "id": "distant-stars",
+          "type": "fireflies",
+          "count": 10000,
+          "position": { "x": 0, "y": 0, "z": 0 },
+          "area": { "x": 800, "y": 800, "z": 800 },
+          "speed": 0.01,
+          "color": { "r": 1.0, "g": 1.0, "b": 1.0 },
+          "opacity": 0.6,
+          "size": 0.07
+        },
+        {
+          "id": "colored-stars",
+          "type": "fireflies",
+          "count": 2000,
+          "position": { "x": 0, "y": 0, "z": 0 },
+          "area": { "x": 800, "y": 800, "z": 800 },
+          "speed": 0.01,
+          "color": { "r": 0.8, "g": 0.9, "b": 1.0 },
+          "opacity": 0.5,
+          "size": 0.09
+        }
+      ]
+    },
+    {
+      "id": "cosmic-elements",
+      "name": "Cosmic Elements",
+      "visible": true,
+      "opacity": 1.0,
+      "renderOrder": 2,
+      "models": [
+        {
+          "id": "wandering-comet",
+          "src": "primitive:sphere",
+          "position": { "x": -50, "y": 10, "z": 20 },
+          "scale": { "x": 0.3, "y": 0.3, "z": 0.3 },
+          "rotation": { "x": 0, "y": 0, "z": 0 },
+          "material": {
+            "type": "standard",
+            "color": { "r": 0.8, "g": 0.8, "b": 0.9 },
+            "roughness": 0.9,
+            "metalness": 0.0,
+            "emissive": { "r": 0.0, "g": 0.1, "b": 0.2 },
+            "emissiveIntensity": 0.2
+          }
+        },
+        {
+          "id": "pulsar",
+          "src": "primitive:sphere",
+          "position": { "x": 100, "y": 30, "z": -80 },
+          "scale": { "x": 0.5, "y": 0.5, "z": 0.5 },
+          "rotation": { "x": 0, "y": 0, "z": 0 },
+          "material": {
+            "type": "emissive",
+            "color": { "r": 1.0, "g": 1.0, "b": 1.0 },
+            "emissive": { "r": 1.0, "g": 0.2, "b": 0.5 },
+            "emissiveIntensity": 2.0
+          }
+        }
+      ]
+    },
+    {
+      "id": "lighting",
+      "name": "Deep Space Lighting",
+      "visible": true,
+      "opacity": 1.0,
+      "renderOrder": 0,
+      "lights": [
+        {
+          "id": "pulsar-light",
+          "type": "point",
+          "color": { "r": 1.0, "g": 0.3, "b": 0.6 },
+          "intensity": 3.0,
+          "position": { "x": 100, "y": 30, "z": -80 },
+          "distance": 150,
+          "decay": 1.5
+        },
+        {
+          "id": "ambient-deep-space",
+          "type": "ambient",
+          "color": { "r": 0.1, "g": 0.1, "b": 0.2 },
+          "intensity": 0.1
+        }
+      ]
+    }
+  ]
+}

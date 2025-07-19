@@ -1,0 +1,35 @@
+{
+  "id": "space",
+  "name": "Space Exploration",
+  "description": "Immersive space experience with planets, stars, and cosmic phenomena",
+  "scenes": ["solar-system", "deep-space", "nebula"],
+  "defaultModifiers": {
+    "rotation_speed": "1.0",
+    "planet_scale": "1.0",
+    "star_density": "1.0",
+    "ambient_light": "0.3",
+    "cosmic_glow": "0.5"
+  },
+  "cameras": {
+    "north": {
+      "position": [0, 0, 15],
+      "target": [0, 0, 0],
+      "fov": 75
+    },
+    "south": {
+      "position": [0, 0, -15],
+      "target": [0, 0, 0],
+      "fov": 75
+    },
+    "east": {
+      "position": [15, 0, 0],
+      "target": [0, 0, 0],
+      "fov": 75
+    },
+    "west": {
+      "position": [-15, 0, 0],
+      "target": [0, 0, 0],
+      "fov": 75
+    }
+  }
+}

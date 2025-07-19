@@ -36,7 +36,14 @@ export interface LightConfig {
 
 export interface ParticleConfig {
   id: string
-  type: 'fog' | 'rain' | 'snow' | 'leaves' | 'fireflies'
+  type:
+    | 'fog'
+    | 'rain'
+    | 'snow'
+    | 'leaves'
+    | 'fireflies'
+    | 'stars'
+    | 'shooting-star'
   count: number
   position: Vector3
   area: Vector3
@@ -50,7 +57,7 @@ export interface ModelConfig {
   id: string
   src: string
   position: Vector3
-  rotation: Vector3
+  rotation?: Vector3
   scale: Vector3
   animations?: string[]
   castShadow?: boolean
