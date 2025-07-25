@@ -36,7 +36,7 @@ export default function WallPage({ params }: WallPageProps) {
 
   // Parse URL modifiers
   useEffect(() => {
-    const modifierString = searchParams.get('modifiers')
+    const modifierString = searchParams ? searchParams.get('modifiers') : null
     if (modifierString) {
       const parsedModifiers: Record<string, string> = {}
 
@@ -60,21 +60,35 @@ export default function WallPage({ params }: WallPageProps) {
 
   const loadProgramConfig = async (programName: string, sceneName: string) => {
     try {
+      console.log('🔄 Loading program config for:', programName, sceneName)
+      
       // Load program config
       const programResponse = await fetch(
         `/data/programs/${programName}/config.json`
       )
+      
+      if (!programResponse.ok) {
+        throw new Error(`Program config not found: ${programResponse.status}`)
+      }
+      
       const program = await programResponse.json()
+      console.log('✅ Program config loaded:', program)
       setProgramConfig(program)
 
       // Load scene config
       const sceneResponse = await fetch(
         `/data/programs/${programName}/scenes/${sceneName}.json`
       )
+      
+      if (!sceneResponse.ok) {
+        throw new Error(`Scene config not found: ${sceneResponse.status}`)
+      }
+      
       const scene = await sceneResponse.json()
+      console.log('✅ Scene config loaded:', scene)
       setSceneConfig(scene)
     } catch (error) {
-      console.error('Failed to load configuration:', error)
+      console.error('❌ Failed to load configuration:', error)
     }
   }
 

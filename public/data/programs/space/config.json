@@ -1,35 +1,29 @@
 {
   "id": "space",
   "name": "Space Exploration",
-  "description": "Immersive space experience with planets, stars, and cosmic phenomena",
-  "scenes": ["solar-system", "deep-space", "nebula"],
-  "defaultModifiers": {
-    "rotation_speed": "1.0",
-    "planet_scale": "1.0",
-    "star_density": "1.0",
-    "ambient_light": "0.3",
-    "cosmic_glow": "0.5"
-  },
-  "cameras": {
-    "north": {
-      "position": [0, 0, 15],
-      "target": [0, 0, 0],
-      "fov": 75
+  "description": "Journey through the cosmos with planets, stars, and celestial phenomena",
+  "author": "Birthday Project",
+  "version": "1.0.0",
+  "scenes": [
+    {
+      "id": "solar-system",
+      "name": "Night Sky",
+      "description": "Beautiful night sky with twinkling stars and shooting stars",
+      "duration": 120
     },
-    "south": {
-      "position": [0, 0, -15],
-      "target": [0, 0, 0],
-      "fov": 75
+    {
+      "id": "deep-space",
+      "name": "Deep Space",
+      "description": "Journey through distant galaxies and cosmic phenomena",
+      "duration": 180
     },
-    "east": {
-      "position": [15, 0, 0],
-      "target": [0, 0, 0],
-      "fov": 75
-    },
-    "west": {
-      "position": [-15, 0, 0],
-      "target": [0, 0, 0],
-      "fov": 75
+    {
+      "id": "nebula",
+      "name": "Cosmic Nebula",
+      "description": "Colorful gas clouds and stellar formation regions",
+      "duration": 150
     }
-  }
+  ],
+  "globalAudio": [],
+  "preloadAssets": []
 }
