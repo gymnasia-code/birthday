@@ -1,0 +1,4 @@
+# Directories to ignore during Next.js compilation
+chrome-profile/
+~/Projects/chrome-profile/
+**/chrome-profile/**

@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import SceneRenderer from '@/components/Scene/SceneRenderer'
-import DevPanel from '@/components/UI/DevPanel'
+import DevPanel from '@/components/ui/DevPanel'
 import { ProgramConfig, SceneConfig } from '@/types/scene'
 
 interface WallPageProps {
@@ -61,16 +61,16 @@ export default function WallPage({ params }: WallPageProps) {
   const loadProgramConfig = async (programName: string, sceneName: string) => {
     try {
       console.log('🔄 Loading program config for:', programName, sceneName)
-      
+
       // Load program config
       const programResponse = await fetch(
         `/data/programs/${programName}/config.json`
       )
-      
+
       if (!programResponse.ok) {
         throw new Error(`Program config not found: ${programResponse.status}`)
       }
-      
+
       const program = await programResponse.json()
       console.log('✅ Program config loaded:', program)
       setProgramConfig(program)
@@ -79,11 +79,11 @@ export default function WallPage({ params }: WallPageProps) {
       const sceneResponse = await fetch(
         `/data/programs/${programName}/scenes/${sceneName}.json`
       )
-      
+
       if (!sceneResponse.ok) {
         throw new Error(`Scene config not found: ${sceneResponse.status}`)
       }
-      
+
       const scene = await sceneResponse.json()
       console.log('✅ Scene config loaded:', scene)
       setSceneConfig(scene)

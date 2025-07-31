@@ -100,7 +100,6 @@ export default function ModelRenderer(props: ModelRendererProps) {
   const { model, modifiers, currentTime, wallDirection } = props
   const groupRef = useRef<Group>(null)
   const isPrimitive = model.src.startsWith('primitive:')
-  const primitiveType = isPrimitive ? model.src.replace('primitive:', '') : null
   // Always call hooks at the top level
   const { scene, animations, error } = useSafeGLTF(model.src)
   const { actions } = useAnimations(animations || [], groupRef)

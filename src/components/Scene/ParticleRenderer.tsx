@@ -5,8 +5,6 @@ import {
   AdditiveBlending,
   Points,
   PointsMaterial,
-  LineSegments,
-  LineBasicMaterial,
   BufferGeometry,
 } from 'three'
 import { ParticleConfig, ModifierState } from '@/types/scene'
@@ -21,7 +19,6 @@ interface ParticleRendererProps {
 export default function ParticleRenderer({
   particles,
   modifiers,
-  currentTime,
   layerOpacity,
 }: ParticleRendererProps) {
   const pointsRef = useRef<Points>(null)
@@ -146,7 +143,7 @@ export default function ParticleRenderer({
     }
 
     return { positions, velocities }
-  }, [particles])
+  }, [particles, cooldowns])
 
   // Calculate opacity based on modifiers
   const opacity = useMemo(() => {
