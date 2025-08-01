@@ -54,7 +54,7 @@ const nextConfig: NextConfig = {
       symlinks: false,
       alias: {
         ...config.resolve.alias,
-        '@': path.resolve(__dirname, 'src'),
+        '@': path.resolve(process.cwd(), 'src'),
       },
     }
 
