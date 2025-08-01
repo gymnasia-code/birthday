@@ -339,7 +339,7 @@ export default function PartyMenuPage() {
             <p className="text-center text-red-600 mb-4">
               This page requires URL parameters to work properly.
             </p>
-            <div className="text-sm text-gray-600 mb-4">
+            <div className="text-sm text-gray-800 mb-4">
               <strong>Required parameters:</strong>
               <ul className="list-disc list-inside mt-2">
                 <li>birthdayId: {birthdayId || 'MISSING'}</li>
@@ -390,16 +390,20 @@ export default function PartyMenuPage() {
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold">{t('partyMenu')}</h1>
-          <Button onClick={switchLanguage} variant="outline">
+          <h1 className="text-3xl font-bold text-gray-800">{t('partyMenu')}</h1>
+          <Button
+            onClick={switchLanguage}
+            variant="outline"
+            className="border-gray-300 text-gray-700 hover:border-blue-400 hover:text-blue-600 hover:bg-blue-50 transition-colors duration-200"
+          >
             {language === 'en' ? 'ქართული' : 'English'}
           </Button>
         </div>
 
         {/* Order Info */}
-        <Card className="mb-6">
+        <Card className="mb-6 bg-blue-50 border-blue-200">
           <CardHeader>
-            <CardTitle className="flex justify-between items-center">
+            <CardTitle className="flex justify-between items-center text-gray-800">
               <span>{birthday.customerName || `Birthday #${birthdayId}`}</span>
               {order.isSubmitted && <Badge variant="default">Submitted</Badge>}
               {!order.canModify && !order.isSubmitted && (
@@ -446,7 +450,10 @@ export default function PartyMenuPage() {
               <CardContent>
                 <div className="grid md:grid-cols-2 gap-4">
                   {menu.map(item => (
-                    <Card key={item.id} className="overflow-hidden">
+                    <Card
+                      key={item.id}
+                      className="overflow-hidden bg-gray-50 hover:bg-gray-100 transition-colors duration-200 border-gray-200"
+                    >
                       {item.photo && (
                         <Image
                           src={item.photo}
@@ -457,7 +464,7 @@ export default function PartyMenuPage() {
                         />
                       )}
                       <CardContent className="p-4">
-                        <h3 className="font-semibold mb-2">
+                        <h3 className="font-semibold mb-2 text-gray-800">
                           {language === 'ge'
                             ? item.titleGE || item.title
                             : item.title}
@@ -468,11 +475,15 @@ export default function PartyMenuPage() {
                             : item.description}
                         </p>
                         <div className="flex justify-between items-center">
-                          <span className="font-bold">
+                          <span className="font-bold text-gray-800">
                             {item.price} {t('gel')}
                           </span>
                           {order.canModify && (
-                            <Button onClick={() => addToOrder(item)} size="sm">
+                            <Button
+                              onClick={() => addToOrder(item)}
+                              size="sm"
+                              className="bg-green-600 hover:bg-green-700 text-white transition-colors duration-200 shadow-sm hover:shadow-md"
+                            >
                               <Plus className="h-4 w-4 mr-1" />
                               {t('addToOrder')}
                             </Button>
@@ -488,13 +499,13 @@ export default function PartyMenuPage() {
 
           {/* Order Summary */}
           <div>
-            <Card className="sticky top-4">
+            <Card className="sticky top-4 border-green-200">
               <CardHeader>
-                <CardTitle>Order Summary</CardTitle>
+                <CardTitle className="text-gray-800">Order Summary</CardTitle>
               </CardHeader>
               <CardContent>
                 {order.items.length === 0 ? (
-                  <p className="text-gray-500 text-center py-4">
+                  <p className="text-gray-700 text-center py-4">
                     No items in order
                   </p>
                 ) : (
@@ -510,7 +521,7 @@ export default function PartyMenuPage() {
                               ? item.menuItem.titleGE || item.menuItem.title
                               : item.menuItem.title}
                           </p>
-                          <p className="text-sm text-gray-600">
+                          <p className="text-sm text-gray-800">
                             {item.menuItem.price} {t('gel')} × {item.quantity}
                           </p>
                         </div>
@@ -525,10 +536,11 @@ export default function PartyMenuPage() {
                               }
                               size="sm"
                               variant="outline"
+                              className="border-gray-300 text-gray-600 hover:border-red-400 hover:text-red-600 hover:bg-red-50 transition-colors duration-200"
                             >
                               <Minus className="h-3 w-3" />
                             </Button>
-                            <span className="w-8 text-center">
+                            <span className="w-8 text-center font-medium text-gray-700">
                               {item.quantity}
                             </span>
                             <Button
@@ -540,6 +552,7 @@ export default function PartyMenuPage() {
                               }
                               size="sm"
                               variant="outline"
+                              className="border-gray-300 text-gray-600 hover:border-green-400 hover:text-green-600 hover:bg-green-50 transition-colors duration-200"
                             >
                               <Plus className="h-3 w-3" />
                             </Button>
@@ -580,7 +593,7 @@ export default function PartyMenuPage() {
                         <Button
                           onClick={submitOrder}
                           disabled={!isOrderValid || submitting}
-                          className="w-full mt-4"
+                          className="w-full mt-4 bg-green-600 hover:bg-green-700 text-white transition-colors duration-200 shadow-sm hover:shadow-md disabled:bg-gray-400 disabled:hover:bg-gray-400"
                         >
                           {submitting ? (
                             <Loader2 className="h-4 w-4 animate-spin mr-2" />
@@ -593,7 +606,7 @@ export default function PartyMenuPage() {
                 )}
 
                 <div className="mt-6 pt-4 border-t">
-                  <p className="text-sm text-gray-600 mb-2">
+                  <p className="text-sm text-gray-800 mb-2">
                     {t('managerContact')}
                   </p>
                   <div className="flex items-center space-x-2">
