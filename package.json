@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@cloudflare/next-on-pages": "^1.13.12",
+    "@google/generative-ai": "^0.24.1",
     "@notionhq/client": "^4.0.1",
     "@radix-ui/react-dialog": "^1.1.14",
     "@radix-ui/react-slot": "^1.2.3",

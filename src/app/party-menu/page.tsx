@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
-import { Loader2, Plus, Minus, Phone } from 'lucide-react'
+import { Loader2, Plus, Minus, Phone, Sparkles } from 'lucide-react'
 import { toast } from 'sonner'
 import {
   MenuItem,
@@ -38,11 +38,15 @@ export const runtime = 'edge'
 export default function PartyMenuPage() {
   const searchParams = useSearchParams()
   const birthdayId = searchParams?.get('birthdayId')
-  const guests = parseInt(searchParams?.get('guests') || '0')
+  const kids = parseInt(searchParams?.get('kids') || '0')
+  const adults = parseInt(searchParams?.get('adults') || '0')
+  const guests = kids + adults
   const location = searchParams?.get('location') || 'cafe'
 
   logger.clientInfo('PartyMenuPage component initialized', {
     birthdayId,
+    kids,
+    adults,
     guests,
     location,
     searchParamsKeys: searchParams ? Array.from(searchParams.keys()) : [],
@@ -54,6 +58,7 @@ export default function PartyMenuPage() {
   const [order, setOrder] = useState<PartyOrder | null>(null)
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
+  const [suggesting, setSuggesting] = useState(false)
   const [notes, setNotes] = useState('')
   const [activeTab, setActiveTab] = useState<'birthday' | 'cafe'>('birthday')
 
@@ -67,6 +72,8 @@ export default function PartyMenuPage() {
   const initializeData = useCallback(async () => {
     logger.clientInfo('Initializing party menu data', {
       birthdayId,
+      kids,
+      adults,
       guests,
       location,
     })
@@ -213,6 +220,8 @@ export default function PartyMenuPage() {
                 birthdayId,
                 location,
                 guests,
+                kids,
+                adults,
                 items: [],
                 notes: '',
                 totalAmount: 0,
@@ -257,6 +266,8 @@ export default function PartyMenuPage() {
               birthdayId,
               location,
               guests,
+              kids,
+              adults,
               items: [],
               notes: '',
               totalAmount: 0,
@@ -290,20 +301,24 @@ export default function PartyMenuPage() {
       setLoading(false)
       logger.clientDebug('Initialize data completed')
     }
-  }, [birthdayId, guests, location, language]) // Removed 't' and added 'language' instead
+  }, [birthdayId, kids, adults, guests, location, language]) // Removed 't' and added 'language' instead
 
   useEffect(() => {
     logger.clientInfo('Party menu page useEffect triggered', {
       birthdayId,
+      kids,
+      adults,
       guests,
       location,
-      hasValidParams: !!(birthdayId && guests && guests > 0),
+      hasValidParams: !!(birthdayId && (kids > 0 || adults > 0)),
     })
 
     // Don't initialize if parameters are invalid - the component will show error state
-    if (!birthdayId || !guests || guests <= 0) {
+    if (!birthdayId || (kids <= 0 && adults <= 0)) {
       logger.clientError('Invalid parameters provided', {
         birthdayId,
+        kids,
+        adults,
         guests,
         location,
       })
@@ -311,7 +326,7 @@ export default function PartyMenuPage() {
     }
 
     initializeData()
-  }, [birthdayId, guests, location, initializeData])
+  }, [birthdayId, kids, adults, location, initializeData])
 
   const updateOrder = (updatedOrder: PartyOrder) => {
     const newOrder = {
@@ -374,6 +389,113 @@ export default function PartyMenuPage() {
       items: newItems,
       totalAmount,
     })
+  }
+
+  const getSuggestions = async () => {
+    if (!order || !order.canModify || suggesting) return
+
+    // Check usage limits
+    const usageLimit = 3
+    const suggestionsUsed = order.aiSuggestionsUsed || 0
+    if (suggestionsUsed >= usageLimit) {
+      toast.error(
+        language === 'en'
+          ? `You've reached the maximum AI suggestions limit (${usageLimit})`
+          : `მიღწეულია AI რეკომენდაციების მაქსიმალური ლიმიტი (${usageLimit})`
+      )
+      return
+    }
+
+    try {
+      setSuggesting(true)
+
+      // Filter only birthday menu items for the request using smart categorization
+      const birthdayMenu = menu.filter(item => isBirthdayMenuItem(item))
+
+      if (birthdayMenu.length === 0) {
+        toast.error(
+          language === 'en'
+            ? 'No birthday menu items available for suggestions'
+            : 'დაბადების მენიუს ელემენტები მიუწვდომელია რეკომენდაციებისთვის'
+        )
+        return
+      }
+
+      const response = await fetch('/api/orders/suggest', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          birthdayId,
+          kids,
+          adults,
+          currentOrder: order,
+          menu: birthdayMenu,
+        }),
+      })
+
+      if (response.ok) {
+        const result = (await response.json()) as {
+          success: boolean
+          suggestions?: Array<{
+            id: string
+            quantity: number
+            reasoning: string
+            menuItem: MenuItem
+          }>
+          totalEstimatedAmount?: number
+          explanation?: string
+          aiSuggestionsRemaining?: number
+          error?: string
+        }
+
+        if (result.success && result.suggestions) {
+          // Apply suggestions to order
+          const newItems: OrderItem[] = result.suggestions.map(suggestion => ({
+            menuItem: suggestion.menuItem,
+            quantity: suggestion.quantity,
+          }))
+
+          const totalAmount = newItems.reduce(
+            (sum, item) => sum + item.menuItem.price * item.quantity,
+            0
+          )
+
+          updateOrder({
+            ...order,
+            items: newItems,
+            totalAmount,
+            aiSuggestionsUsed: suggestionsUsed + 1,
+            lastAiSuggestionAt: new Date().toISOString(),
+          })
+
+          toast.success(
+            language === 'en'
+              ? `AI suggestions applied! ${result.aiSuggestionsRemaining || 0} suggestions remaining. ${result.explanation || ''}`
+              : `AI რეკომენდაციები გამოყენებულია! დარჩენილია ${result.aiSuggestionsRemaining || 0} რეკომენდაცია. ${result.explanation || ''}`,
+            {
+              duration: 8000,
+            }
+          )
+        } else {
+          throw new Error(result.error || 'No suggestions received')
+        }
+      } else {
+        const error = (await response.json()) as { error?: string }
+        throw new Error(error.error || 'Failed to get suggestions')
+      }
+    } catch (error) {
+      console.error('Error getting suggestions:', error)
+      toast.error(
+        language === 'en'
+          ? `Failed to get AI suggestions: ${error instanceof Error ? error.message : 'Unknown error'}`
+          : `AI რეკომენდაციების მიღება ვერ მოხერხდა: ${error instanceof Error ? error.message : 'უცნობი შეცდომა'}`,
+        {
+          duration: 6000,
+        }
+      )
+    } finally {
+      setSuggesting(false)
+    }
   }
 
   const submitOrder = async () => {
@@ -463,7 +585,7 @@ export default function PartyMenuPage() {
   }
 
   // Check for missing parameters first
-  if (!birthdayId || !guests || guests <= 0) {
+  if (!birthdayId || (kids <= 0 && adults <= 0)) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Card className="p-6 max-w-md">
@@ -478,7 +600,9 @@ export default function PartyMenuPage() {
               <strong>Required parameters:</strong>
               <ul className="list-disc list-inside mt-2">
                 <li>birthdayId: {birthdayId || 'MISSING'}</li>
-                <li>guests: {guests || 'MISSING'}</li>
+                <li>kids: {kids || 'MISSING'}</li>
+                <li>adults: {adults || 'MISSING'}</li>
+                <li>guests (total): {guests}</li>
                 <li>location: {location}</li>
               </ul>
             </div>
@@ -565,7 +689,13 @@ export default function PartyMenuPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
+              <div>
+                <span className="font-medium">Kids:</span> {kids}
+              </div>
+              <div>
+                <span className="font-medium">Adults:</span> {adults}
+              </div>
               <div>
                 <span className="font-medium">{t('guests')}:</span> {guests}
               </div>
@@ -576,6 +706,8 @@ export default function PartyMenuPage() {
                 <span className="font-medium">Date:</span>{' '}
                 {new Date(birthday.date).toLocaleDateString()}
               </div>
+            </div>
+            <div className="mt-2">
               <div>
                 <span className="font-medium">{t('total')}:</span>{' '}
                 {order.totalAmount} {t('gel')}
@@ -838,6 +970,37 @@ export default function PartyMenuPage() {
 
                     {order.canModify && (
                       <>
+                        {/* Magic Suggestion Button */}
+                        <div className="mt-4">
+                          <Button
+                            onClick={getSuggestions}
+                            disabled={
+                              suggesting || (order.aiSuggestionsUsed || 0) >= 3
+                            }
+                            className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white transition-all duration-200 shadow-sm hover:shadow-md disabled:from-gray-400 disabled:to-gray-400 disabled:hover:from-gray-400 disabled:hover:to-gray-400"
+                          >
+                            {suggesting ? (
+                              <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                            ) : (
+                              <Sparkles className="h-4 w-4 mr-2" />
+                            )}
+                            {suggesting
+                              ? language === 'en'
+                                ? 'Getting Suggestions...'
+                                : 'რეკომენდაციების მიღება...'
+                              : language === 'en'
+                                ? 'Magic Menu Suggestions'
+                                : 'ჯადოსნური მენიუს რეკომენდაციები'}
+                          </Button>
+                          {(order.aiSuggestionsUsed || 0) > 0 && (
+                            <p className="text-xs text-gray-600 mt-1 text-center">
+                              {language === 'en'
+                                ? `${3 - (order.aiSuggestionsUsed || 0)} suggestions remaining`
+                                : `დარჩენილია ${3 - (order.aiSuggestionsUsed || 0)} რეკომენდაცია`}
+                            </p>
+                          )}
+                        </div>
+
                         <div className="mt-4">
                           <label className="block text-sm font-medium mb-2">
                             {t('notes')}

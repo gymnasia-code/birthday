@@ -134,6 +134,8 @@ export interface PartyOrder {
   birthdayId: string
   location: string
   guests: number
+  kids: number
+  adults: number
   items: OrderItem[]
   notes: string
   totalAmount: number
@@ -142,6 +144,8 @@ export interface PartyOrder {
   createdAt: string
   updatedAt: string
   canModify: boolean
+  aiSuggestionsUsed?: number
+  lastAiSuggestionAt?: string
 }
 
 export interface Birthday {

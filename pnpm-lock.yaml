@@ -11,6 +11,9 @@ importers:
       '@cloudflare/next-on-pages':
         specifier: ^1.13.12
         version: 1.13.12(@cloudflare/workers-types@4.20250801.0)(vercel@44.5.0)(wrangler@4.25.0(@cloudflare/workers-types@4.20250801.0))
+      '@google/generative-ai':
+        specifier: ^0.24.1
+        version: 0.24.1
       '@notionhq/client':
         specifier: ^4.0.1
         version: 4.0.1
@@ -795,6 +798,10 @@ packages:
   '@fastify/busboy@2.1.1':
     resolution: {integrity: sha512-vBZP4NlzfOlerQTnba4aqZoMhE/a9HY7HRqoOPaETQcSQuWEIyZMHGfVu6w9wGtGK5fED5qRs2DteVCjOH60sA==}
     engines: {node: '>=14'}
+
+  '@google/generative-ai@0.24.1':
+    resolution: {integrity: sha512-MqO+MLfM6kjxcKoy0p1wRzG3b4ZZXtPI+z2IE26UogS2Cm/XHO+7gGRBh6gcJsOiIVoH93UwKvW4HdgiOZCy9Q==}
+    engines: {node: '>=18.0.0'}
 
   '@humanfs/core@0.19.1':
     resolution: {integrity: sha512-5DyQ4+1JEUzejeK1JGICcideyfUbGixgS9jNgex5nqkW+cY7WZhxBigmieN5Qnw9ZosSNVC9KQKyb+GUaGyKUA==}
@@ -6321,6 +6328,8 @@ snapshots:
       levn: 0.4.1
 
   '@fastify/busboy@2.1.1': {}
+
+  '@google/generative-ai@0.24.1': {}
 
   '@humanfs/core@0.19.1': {}
 
