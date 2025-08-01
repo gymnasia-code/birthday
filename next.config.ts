@@ -52,10 +52,10 @@ const nextConfig: NextConfig = {
     config.resolve = {
       ...config.resolve,
       symlinks: false,
-      alias: {
-        ...config.resolve.alias,
-        '@': path.resolve(process.cwd(), 'src'),
-      },
+      // alias: {
+      //   ...config.resolve.alias,
+      //   '@': path.resolve(process.cwd(), 'src'),
+      // },
     }
 
     return config
