@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { Client } from '@notionhq/client'
 import { logger } from '@/lib/utils/logger'
 
@@ -46,25 +46,32 @@ export async function GET() {
       resultsCount: response.results.length,
     })
 
-    const results = response.results.map((record: any) => ({
-      id: record.id,
-      properties: Object.keys(record.properties || {}),
-      uniqueId:
-        record.properties?.ID?.unique_id?.number ||
-        record.properties?.iD?.unique_id?.number,
-      name:
-        record.properties?.Name?.title?.[0]?.text?.content ||
-        record.properties?.name?.title?.[0]?.text?.content,
-      type:
-        record.properties?.Type?.select?.name ||
-        record.properties?.type?.select?.name,
-      date:
-        record.properties?.Date?.date?.start ||
-        record.properties?.date?.date?.start,
-      location:
-        record.properties?.Location?.select?.name ||
-        record.properties?.location?.select?.name,
-    }))
+    const results = response.results.map((record: unknown) => {
+      const recordData = record as {
+        id: string
+        properties: Record<string, any>
+      }
+
+      return {
+        id: recordData.id,
+        properties: Object.keys(recordData.properties || {}),
+        uniqueId:
+          recordData.properties?.ID?.unique_id?.number ||
+          recordData.properties?.iD?.unique_id?.number,
+        name:
+          recordData.properties?.Name?.title?.[0]?.text?.content ||
+          recordData.properties?.name?.title?.[0]?.text?.content,
+        type:
+          recordData.properties?.Type?.select?.name ||
+          recordData.properties?.type?.select?.name,
+        date:
+          recordData.properties?.Date?.date?.start ||
+          recordData.properties?.date?.date?.start,
+        location:
+          recordData.properties?.Location?.select?.name ||
+          recordData.properties?.location?.select?.name,
+      }
+    })
 
     return NextResponse.json({
       success: true,

@@ -7,7 +7,12 @@
   
   // Environment variables (add your own as needed)
   "vars": {
-    "NODE_ENV": "production"
+    "NODE_ENV": "production",
+    "NOTION_DATABASE_ID": "7c2bd07e-8bce-4a01-be92-531874f8c760",
+    "POSTER_API_URL": "https://joinposter.com/api",
+    "POSTER_BASE_URL_CAFE": "https://joinposter.com/api",
+    "POSTER_BASE_URL_PARK": "https://joinposter.com/api",
+    "NEXT_PUBLIC_BASE_URL": "https://bd.gymnasia.ge"
   }
   
   // Custom domain configuration

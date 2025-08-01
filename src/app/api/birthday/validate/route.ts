@@ -79,7 +79,21 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    const notionRecord = response.results[0] as any
+    interface NotionDateProperty {
+      start?: string
+    }
+
+    interface NotionProperty {
+      date?: NotionDateProperty
+      select?: { name?: string }
+      title?: Array<{ text?: { content?: string } }>
+      rich_text?: Array<{ text?: { content?: string } }>
+    }
+
+    const notionRecord = response.results[0] as {
+      id: string
+      properties: Record<string, NotionProperty>
+    }
 
     logger.serverDebug('Notion record found', {
       id: notionRecord.id,
@@ -91,26 +105,33 @@ export async function GET(request: NextRequest) {
 
     const birthday: Birthday = {
       id: birthdayId,
-      date: properties.Date?.date?.start || properties.date?.date?.start,
+      date:
+        (properties.Date as NotionProperty)?.date?.start ||
+        (properties.date as NotionProperty)?.date?.start ||
+        '',
       location:
-        properties.Location?.select?.name ||
-        properties.location?.select?.name ||
+        (properties.Location as NotionProperty)?.select?.name ||
+        (properties.location as NotionProperty)?.select?.name ||
         'unknown',
       isValid: true,
       customerName:
-        properties.Name?.title?.[0]?.text?.content ||
-        properties.name?.title?.[0]?.text?.content ||
+        (properties.Name as NotionProperty)?.title?.[0]?.text?.content ||
+        (properties.name as NotionProperty)?.title?.[0]?.text?.content ||
         'Unknown Customer',
       customerPhone: undefined, // Phone not in your schema
       kidsQuantity:
-        properties['Kids quantity']?.rich_text?.[0]?.text?.content ||
-        properties.kidsQuantity?.rich_text?.[0]?.text?.content,
+        (properties['Kids quantity'] as NotionProperty)?.rich_text?.[0]?.text
+          ?.content ||
+        (properties.kidsQuantity as NotionProperty)?.rich_text?.[0]?.text
+          ?.content,
       adultsQuantity:
-        properties['Adults Quantity']?.rich_text?.[0]?.text?.content ||
-        properties.adultsQuantity?.rich_text?.[0]?.text?.content,
+        (properties['Adults Quantity'] as NotionProperty)?.rich_text?.[0]?.text
+          ?.content ||
+        (properties.adultsQuantity as NotionProperty)?.rich_text?.[0]?.text
+          ?.content,
       program:
-        properties.Program?.rich_text?.[0]?.text?.content ||
-        properties.program?.rich_text?.[0]?.text?.content,
+        (properties.Program as NotionProperty)?.rich_text?.[0]?.text?.content ||
+        (properties.program as NotionProperty)?.rich_text?.[0]?.text?.content,
     }
 
     logger.serverInfo('Birthday validation successful', {
@@ -124,7 +145,6 @@ export async function GET(request: NextRequest) {
   } catch (error: unknown) {
     const errorMessage =
       error instanceof Error ? error.message : 'Unknown error'
-    const errorStack = error instanceof Error ? error.stack : undefined
 
     logger.serverError(
       'Birthday validation failed',
