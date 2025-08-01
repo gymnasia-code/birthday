@@ -59,4 +59,16 @@ export const translations = {
     en: 'Order is read-only (submitted or modification deadline passed)',
     ge: 'შეკვეთა არ იცვლება (გაგზავნილია ან ცვლილების ვადა ამოიწურა)',
   },
+  birthdayMenu: {
+    en: 'Birthday Menu',
+    ge: 'დაბადების დღის მენიუ',
+  },
+  cafeMenu: {
+    en: 'Cafe Menu',
+    ge: 'კაფე მენიუ',
+  },
+  noItemsInCategory: {
+    en: 'No items available in this category',
+    ge: 'ამ კატეგორიაში ელემენტები არ არის ხელმისაწვდომი',
+  },
 }

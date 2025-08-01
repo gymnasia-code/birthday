@@ -26,6 +26,12 @@ import {
   clearStoredOrder,
 } from '@/lib/utils/storage'
 import { logger } from '@/lib/utils/logger'
+import {
+  organizeMenuIntoSections,
+  isBirthdayMenuItem,
+  isCafeMenuItem,
+  MenuSection,
+} from '@/lib/utils/menu-categorization'
 
 export const runtime = 'edge'
 
@@ -49,6 +55,7 @@ export default function PartyMenuPage() {
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [notes, setNotes] = useState('')
+  const [activeTab, setActiveTab] = useState<'birthday' | 'cafe'>('birthday')
 
   const t = (key: keyof typeof translations) => translations[key][language]
 
@@ -112,7 +119,7 @@ export default function PartyMenuPage() {
       // Load menu
       logger.clientDebug('Loading menu', { location })
       const menuResponse = await fetch(
-        `/api/menu?location=${encodeURIComponent(location)}`
+        `/api/menu?location=${encodeURIComponent(location)}&birthdayId=${birthdayId}&birthday=true`
       )
 
       logger.clientDebug('Menu response', {
@@ -385,6 +392,19 @@ export default function PartyMenuPage() {
   const minTotal = guests * PARTY_MENU_CONFIG.minOrderPerPerson
   const isOrderValid = order.totalAmount >= minTotal
 
+  // Filter menu items based on active tab and organize into sections
+  const filteredMenu = menu.filter(item => {
+    if (activeTab === 'birthday') {
+      return isBirthdayMenuItem(item)
+    } else {
+      return isCafeMenuItem(item)
+    }
+  })
+
+  // Organize filtered menu into intelligent sections for birthday menu
+  const menuSections =
+    activeTab === 'birthday' ? organizeMenuIntoSections(filteredMenu) : null
+
   return (
     <div className="min-h-screen bg-gray-50 p-4">
       <div className="max-w-6xl mx-auto">
@@ -446,53 +466,143 @@ export default function PartyMenuPage() {
             <Card>
               <CardHeader>
                 <CardTitle>{t('selectMenu')}</CardTitle>
+                {/* Menu Tabs */}
+                <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg">
+                  <button
+                    onClick={() => setActiveTab('birthday')}
+                    className={`flex-1 px-4 py-2 text-sm font-medium rounded-md transition-colors duration-200 ${
+                      activeTab === 'birthday'
+                        ? 'bg-white text-blue-600 shadow-sm'
+                        : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
+                    }`}
+                  >
+                    {t('birthdayMenu')}
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('cafe')}
+                    className={`flex-1 px-4 py-2 text-sm font-medium rounded-md transition-colors duration-200 ${
+                      activeTab === 'cafe'
+                        ? 'bg-white text-blue-600 shadow-sm'
+                        : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
+                    }`}
+                  >
+                    {t('cafeMenu')}
+                  </button>
+                </div>
               </CardHeader>
               <CardContent>
-                <div className="grid md:grid-cols-2 gap-4">
-                  {menu.map(item => (
-                    <Card
-                      key={item.id}
-                      className="overflow-hidden bg-gray-50 hover:bg-gray-100 transition-colors duration-200 border-gray-200"
-                    >
-                      {item.photo && (
-                        <Image
-                          src={item.photo}
-                          alt={language === 'ge' ? item.titleGE : item.title}
-                          className="w-full h-48 object-cover"
-                          width={400}
-                          height={200}
-                        />
-                      )}
-                      <CardContent className="p-4">
-                        <h3 className="font-semibold mb-2 text-gray-800">
-                          {language === 'ge'
-                            ? item.titleGE || item.title
-                            : item.title}
+                {filteredMenu.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    <p>{t('noItemsInCategory')}</p>
+                  </div>
+                ) : activeTab === 'birthday' && menuSections ? (
+                  // Organized sections for birthday menu
+                  <div className="space-y-6">
+                    {menuSections.map(section => (
+                      <div key={section.key} className="space-y-4">
+                        <h3 className="text-lg font-semibold text-gray-800 border-b border-gray-200 pb-2">
+                          {language === 'ge' ? section.nameGE : section.name}
                         </h3>
-                        <p className="text-sm text-gray-600 mb-2">
-                          {language === 'ge'
-                            ? item.descriptionGE || item.description
-                            : item.description}
-                        </p>
-                        <div className="flex justify-between items-center">
-                          <span className="font-bold text-gray-800">
-                            {item.price} {t('gel')}
-                          </span>
-                          {order.canModify && (
-                            <Button
-                              onClick={() => addToOrder(item)}
-                              size="sm"
-                              className="bg-green-600 hover:bg-green-700 text-white transition-colors duration-200 shadow-sm hover:shadow-md"
+                        <div className="grid md:grid-cols-2 gap-4">
+                          {section.items.map(item => (
+                            <Card
+                              key={item.id}
+                              className="overflow-hidden bg-gray-50 hover:bg-gray-100 transition-colors duration-200 border-gray-200"
                             >
-                              <Plus className="h-4 w-4 mr-1" />
-                              {t('addToOrder')}
-                            </Button>
-                          )}
+                              {item.photo && (
+                                <Image
+                                  src={item.photo}
+                                  alt={
+                                    language === 'ge'
+                                      ? item.titleGE
+                                      : item.title
+                                  }
+                                  className="w-full h-48 object-cover"
+                                  width={400}
+                                  height={200}
+                                />
+                              )}
+                              <CardContent className="p-4">
+                                <h3 className="font-semibold mb-2 text-gray-800">
+                                  {language === 'ge'
+                                    ? item.titleGE || item.title
+                                    : item.title}
+                                </h3>
+                                <p className="text-sm text-gray-600 mb-2">
+                                  {language === 'ge'
+                                    ? item.descriptionGE || item.description
+                                    : item.description}
+                                </p>
+                                <div className="flex justify-between items-center">
+                                  <span className="font-bold text-gray-800">
+                                    {item.price} {t('gel')}
+                                  </span>
+                                  {order.canModify && (
+                                    <Button
+                                      onClick={() => addToOrder(item)}
+                                      size="sm"
+                                      className="bg-green-600 hover:bg-green-700 text-white transition-colors duration-200 shadow-sm hover:shadow-md"
+                                    >
+                                      <Plus className="h-4 w-4 mr-1" />
+                                      {t('addToOrder')}
+                                    </Button>
+                                  )}
+                                </div>
+                              </CardContent>
+                            </Card>
+                          ))}
                         </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  // Regular grid layout for cafe menu
+                  <div className="grid md:grid-cols-2 gap-4">
+                    {filteredMenu.map(item => (
+                      <Card
+                        key={item.id}
+                        className="overflow-hidden bg-gray-50 hover:bg-gray-100 transition-colors duration-200 border-gray-200"
+                      >
+                        {item.photo && (
+                          <Image
+                            src={item.photo}
+                            alt={language === 'ge' ? item.titleGE : item.title}
+                            className="w-full h-48 object-cover"
+                            width={400}
+                            height={200}
+                          />
+                        )}
+                        <CardContent className="p-4">
+                          <h3 className="font-semibold mb-2 text-gray-800">
+                            {language === 'ge'
+                              ? item.titleGE || item.title
+                              : item.title}
+                          </h3>
+                          <p className="text-sm text-gray-600 mb-2">
+                            {language === 'ge'
+                              ? item.descriptionGE || item.description
+                              : item.description}
+                          </p>
+                          <div className="flex justify-between items-center">
+                            <span className="font-bold text-gray-800">
+                              {item.price} {t('gel')}
+                            </span>
+                            {order.canModify && (
+                              <Button
+                                onClick={() => addToOrder(item)}
+                                size="sm"
+                                className="bg-green-600 hover:bg-green-700 text-white transition-colors duration-200 shadow-sm hover:shadow-md"
+                              >
+                                <Plus className="h-4 w-4 mr-1" />
+                                {t('addToOrder')}
+                              </Button>
+                            )}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>

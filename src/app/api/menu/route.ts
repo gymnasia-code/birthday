@@ -6,6 +6,123 @@ import { logger } from '@/lib/utils/logger'
 
 export const runtime = 'edge'
 
+// Intelligent categorization system for birthday menu items
+interface MenuCategory {
+  key: string
+  name: string
+  nameGE: string
+  keywords: string[]
+  priority: number
+}
+
+const BIRTHDAY_MENU_CATEGORIES: MenuCategory[] = [
+  {
+    key: 'snacks',
+    name: 'Snacks & Appetizers',
+    nameGE: 'წახემსება',
+    keywords: ['snack', 'bowl', 'plate', 'fruit'],
+    priority: 1,
+  },
+  {
+    key: 'hot_dishes',
+    name: 'Hot Dishes',
+    nameGE: 'ცხელი კერძები',
+    keywords: [
+      'khachapuri',
+      'lobiani',
+      'burger',
+      'nuggets',
+      'hot dog',
+      'potatoes',
+    ],
+    priority: 2,
+  },
+  {
+    key: 'pizza',
+    name: 'Pizza',
+    nameGE: 'პიცა',
+    keywords: ['pizza', 'margarita', 'prosciutto', 'salami'],
+    priority: 3,
+  },
+  {
+    key: 'salads',
+    name: 'Salads',
+    nameGE: 'სალათები',
+    keywords: ['salad', 'caesar', 'green', 'tomato'],
+    priority: 4,
+  },
+  {
+    key: 'drinks',
+    name: 'Drinks & Beverages',
+    nameGE: 'სასმელები',
+    keywords: [
+      'lemonade',
+      'kompote',
+      'juice',
+      'water',
+      'tea',
+      'coffee',
+      'drink',
+    ],
+    priority: 5,
+  },
+  {
+    key: 'special',
+    name: 'Special Occasions',
+    nameGE: 'სპეციალური',
+    keywords: ['ceremony', 'champagne', 'birthday'],
+    priority: 6,
+  },
+]
+
+function categorizeMenuItem(item: MenuItem): string {
+  const itemName = item.title.toLowerCase()
+  const itemDescription = item.description?.toLowerCase() || ''
+  const searchText = `${itemName} ${itemDescription}`
+
+  // Find the best matching category
+  for (const category of BIRTHDAY_MENU_CATEGORIES) {
+    for (const keyword of category.keywords) {
+      if (searchText.includes(keyword.toLowerCase())) {
+        return category.key
+      }
+    }
+  }
+
+  // Default category for unmatched items
+  return 'other'
+}
+
+function sortMenuItemsIntelligently(items: MenuItem[]): MenuItem[] {
+  // First, categorize all items
+  const categorizedItems = items.map(item => ({
+    ...item,
+    categoryKey: categorizeMenuItem(item),
+  }))
+
+  // Sort by category priority, then alphabetically within each category
+  return orderBy(
+    categorizedItems,
+    [
+      // Primary sort: category priority
+      item => {
+        const category = BIRTHDAY_MENU_CATEGORIES.find(
+          cat => cat.key === item.categoryKey
+        )
+        return category ? category.priority : 999
+      },
+      // Secondary sort: alphabetical within category
+      'title',
+    ],
+    ['asc', 'asc']
+  )
+}
+
+function getCategoryForItem(item: MenuItem): MenuCategory | null {
+  const categoryKey = categorizeMenuItem(item)
+  return BIRTHDAY_MENU_CATEGORIES.find(cat => cat.key === categoryKey) || null
+}
+
 class CafeMenuItem {
   glovo: string = ''
   category: string = ''
@@ -70,6 +187,7 @@ function transformProduct(product: Product): MenuItem {
     photo: menuItem.image,
     price: menuItem.price,
     productId: product.product_id,
+    barcode: product.barcode,
     category: menuItem.category,
     categoryGE: menuItem.categoryGE || '',
     addons: menuItem.addons,
@@ -92,9 +210,10 @@ async function getPosterProducts(
 
 async function getCafeMenu(
   token: string,
-  baseUrl: string
+  baseUrl: string,
+  isBirthdayMenu: boolean = false
 ): Promise<MenuItem[]> {
-  logger.serverDebug('Fetching Poster products', { baseUrl })
+  logger.serverDebug('Fetching Poster products', { baseUrl, isBirthdayMenu })
 
   const { response } = await getPosterProducts(token, baseUrl)
 
@@ -103,12 +222,38 @@ async function getCafeMenu(
     tvProducts: response.filter(x => x.barcode?.includes('tv')).length,
   })
 
-  return orderBy(
-    response.filter(x => x.barcode?.includes('tv')),
-    x => {
-      return parseInt(x.barcode.replace('tv', ''))
-    }
-  ).map(transformProduct)
+  // Transform products to MenuItems
+  let processedItems = response.map(transformProduct)
+
+  // Filter items to only include those with photos
+  processedItems = processedItems.filter(
+    item => item.photo && item.photo.trim() !== ''
+  )
+
+  // Apply different filtering based on menu type
+  if (isBirthdayMenu) {
+    // For birthday menu, keep all items with photos (filtering will happen in frontend)
+    processedItems = sortMenuItemsIntelligently(processedItems)
+    logger.serverDebug('Applied intelligent sorting for birthday menu', {
+      itemCount: processedItems.length,
+    })
+  } else {
+    // For cafe menu, only show items with 'tv' in barcode
+    processedItems = processedItems.filter(item =>
+      item.barcode?.toLowerCase().includes('tv')
+    )
+
+    // Sort cafe menu items by barcode order
+    processedItems = orderBy(processedItems, x => {
+      return parseInt(x.barcode.replace('tv', '')) || 0
+    })
+
+    logger.serverDebug('Applied cafe menu filtering', {
+      itemCount: processedItems.length,
+    })
+  }
+
+  return processedItems
 }
 
 export async function GET(request: NextRequest) {
@@ -177,11 +322,19 @@ export async function GET(request: NextRequest) {
     }
 
     logger.serverDebug('Fetching menu for location', { location })
-    const menu = await getCafeMenu(token, baseUrl)
+
+    // Determine if this is likely a birthday menu request based on location or context
+    const isBirthdayMenu =
+      location.includes('birthday') ||
+      searchParams.get('birthday') === 'true' ||
+      searchParams.get('birthdayId') !== null
+
+    const menu = await getCafeMenu(token, baseUrl, isBirthdayMenu)
 
     logger.serverInfo('Menu fetched successfully', {
       location,
       menuItemsCount: menu.length,
+      isBirthdayMenu,
     })
 
     return NextResponse.json({ menu })

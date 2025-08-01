@@ -117,6 +117,7 @@ export interface MenuItem {
   photo: string
   price: number
   productId: string
+  barcode: string
   category: string
   categoryGE: string
   addons?: string
