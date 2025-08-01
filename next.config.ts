@@ -1,5 +1,6 @@
 import { setupDevPlatform } from '@cloudflare/next-on-pages/next-dev'
 import type { NextConfig } from 'next'
+import path from 'path'
 
 // Setup development platform for Cloudflare compatibility
 if (process.env.NODE_ENV === 'development') {
@@ -47,10 +48,14 @@ const nextConfig: NextConfig = {
       ],
     }
 
-    // Exclude symlink-prone patterns from resolution
+    // Exclude symlink-prone patterns from resolution and add path aliases
     config.resolve = {
       ...config.resolve,
       symlinks: false,
+      alias: {
+        ...config.resolve.alias,
+        '@': path.resolve(__dirname, 'src'),
+      },
     }
 
     return config
