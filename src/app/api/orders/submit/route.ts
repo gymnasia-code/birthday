@@ -1,8 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { PartyOrder } from '@/types/party-menu'
 import { logger } from '@/lib/utils/logger'
+import { getR2Storage } from '@/lib/utils/r2-storage'
 
 export const runtime = 'edge'
+
+interface Env {
+  ORDERS_BUCKET: R2Bucket
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -51,30 +56,39 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // TODO: Create order in Poster
-    logger.serverDebug('Creating Poster order')
-    const posterOrderId = await createPosterOrder(order)
-    logger.serverInfo('Poster order created', { posterOrderId })
+    // Save order to R2 storage
+    logger.serverDebug('Saving order to R2 storage')
+    const r2Storage = getR2Storage({
+      ORDERS_BUCKET: process.env.ORDERS_BUCKET as any,
+    })
+    await r2Storage.saveOrder(order)
+    logger.serverInfo('Order saved to R2 storage', {
+      birthdayId: order.birthdayId,
+    })
 
     // TODO: Update Notion with order status
     logger.serverDebug('Updating Notion order status')
     await updateNotionOrderStatus(order.birthdayId, 'submitted')
     logger.serverInfo('Notion order status updated')
 
-    // TODO: Send Slack notification
+    // Send Slack notification
     logger.serverDebug('Sending Slack notification')
     await sendSlackNotification(order)
     logger.serverInfo('Slack notification sent')
 
     logger.serverInfo('Order submission completed successfully', {
       birthdayId: order.birthdayId,
-      posterOrderId,
+      totalAmount: order.totalAmount,
+      itemsCount: order.items.length,
     })
 
     return NextResponse.json({
       success: true,
-      orderId: posterOrderId,
-      message: 'Order submitted successfully',
+      orderId: `${order.birthdayId}-${Date.now()}`,
+      message:
+        'Order received successfully! Your order has been saved and you can still modify it until 1 day before your birthday. We will contact you soon to confirm the details.',
+      canStillModify: true,
+      modificationDeadline: '1 day before your birthday',
     })
   } catch (error) {
     const errorMessage =
@@ -93,13 +107,6 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     )
   }
-}
-
-async function createPosterOrder(order: PartyOrder): Promise<string> {
-  // TODO: Implement Poster order creation
-  // https://dev.joinposter.com/en/docs/v3/web/transactions/createOrder
-  console.log('Creating Poster order for:', order.birthdayId)
-  return 'mock-order-id'
 }
 
 async function updateNotionOrderStatus(

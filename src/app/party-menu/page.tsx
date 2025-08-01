@@ -85,12 +85,21 @@ export default function PartyMenuPage() {
         statusText: birthdayResponse.statusText,
       })
 
-      const birthdayData = await birthdayResponse.json()
+      const birthdayData = (await birthdayResponse.json()) as Birthday & {
+        error?: string
+      }
 
-      logger.clientDebug('Birthday validation data', birthdayData)
+      logger.clientDebug('Birthday validation data', {
+        isValid: birthdayData.isValid,
+        customerName: birthdayData.customerName,
+        date: birthdayData.date,
+      })
 
       if (!birthdayData.isValid) {
-        logger.clientWarn('Birthday validation failed', birthdayData)
+        logger.clientWarn('Birthday validation failed', {
+          isValid: birthdayData.isValid,
+          error: birthdayData.error,
+        })
         toast.error(translations.invalidBirthday[language])
         return
       }
@@ -127,7 +136,11 @@ export default function PartyMenuPage() {
         statusText: menuResponse.statusText,
       })
 
-      const menuData = await menuResponse.json()
+      const menuData = (await menuResponse.json()) as {
+        menu?: MenuItem[]
+        error?: string
+        details?: string
+      }
 
       logger.clientDebug('Menu data received', {
         hasMenu: !!menuData.menu,
@@ -137,7 +150,10 @@ export default function PartyMenuPage() {
       })
 
       if (menuData.error) {
-        logger.clientError('Menu API returned error', menuData)
+        logger.clientError('Menu API returned error', {
+          error: menuData.error,
+          details: menuData.details,
+        })
         toast.error(`Menu loading failed: ${menuData.error}`)
         return
       }
@@ -146,37 +162,112 @@ export default function PartyMenuPage() {
 
       // Load stored order or create new one
       if (birthdayId) {
-        const storedOrder = getStoredOrder(birthdayId)
-        logger.clientDebug('Stored order check', {
-          hasStoredOrder: !!storedOrder,
-          storedOrderItemsCount: storedOrder?.items?.length || 0,
-        })
-
-        if (storedOrder) {
-          setOrder({
-            ...storedOrder,
-            canModify: canModify && !storedOrder.isSubmitted,
-          })
-          setNotes(storedOrder.notes || '')
-          logger.clientInfo('Loaded existing order', {
-            itemsCount: storedOrder.items.length,
-            totalAmount: storedOrder.totalAmount,
-          })
-        } else {
-          const newOrder = {
-            birthdayId,
-            location,
-            guests,
-            items: [],
-            notes: '',
-            totalAmount: 0,
-            isSubmitted: false,
-            canModify,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
+        // First check if there's an existing order in R2 storage
+        logger.clientDebug('Checking for existing order in R2 storage')
+        try {
+          const orderResponse = await fetch(
+            `/api/orders/get?birthdayId=${birthdayId}`
+          )
+          const orderData = (await orderResponse.json()) as {
+            success: boolean
+            order: PartyOrder | null
+            message?: string
           }
-          setOrder(newOrder)
-          logger.clientInfo('Created new order', newOrder)
+
+          if (orderResponse.ok && orderData.success && orderData.order) {
+            // Found existing order in R2 storage - use it
+            const existingOrder = orderData.order
+            logger.clientInfo('Loaded existing order from R2 storage', {
+              itemsCount: existingOrder.items.length,
+              totalAmount: existingOrder.totalAmount,
+              isSubmitted: existingOrder.isSubmitted,
+            })
+
+            setOrder({
+              ...existingOrder,
+              canModify: canModify, // Allow modification based on deadline, regardless of submission status
+            })
+            setNotes(existingOrder.notes || '')
+          } else {
+            // No order in R2 storage, check localStorage as fallback
+            const storedOrder = getStoredOrder(birthdayId)
+            logger.clientDebug('R2 storage check result', {
+              hasR2Order: false,
+              hasStoredOrder: !!storedOrder,
+              storedOrderItemsCount: storedOrder?.items?.length || 0,
+            })
+
+            if (storedOrder) {
+              setOrder({
+                ...storedOrder,
+                canModify: canModify, // Allow modification based on deadline, regardless of submission status
+              })
+              setNotes(storedOrder.notes || '')
+              logger.clientInfo('Loaded existing order from localStorage', {
+                itemsCount: storedOrder.items.length,
+                totalAmount: storedOrder.totalAmount,
+              })
+            } else {
+              // Create new order
+              const newOrder = {
+                birthdayId,
+                location,
+                guests,
+                items: [],
+                notes: '',
+                totalAmount: 0,
+                isSubmitted: false,
+                canModify,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+              }
+              setOrder(newOrder)
+              logger.clientInfo('Created new order', newOrder)
+            }
+          }
+        } catch (orderError) {
+          // If R2 check fails, fall back to localStorage
+          logger.clientWarn(
+            'R2 storage check failed, falling back to localStorage',
+            {
+              error:
+                orderError instanceof Error
+                  ? orderError.message
+                  : 'Unknown error',
+            }
+          )
+
+          const storedOrder = getStoredOrder(birthdayId)
+          if (storedOrder) {
+            setOrder({
+              ...storedOrder,
+              canModify: canModify, // Allow modification based on deadline, regardless of submission status
+            })
+            setNotes(storedOrder.notes || '')
+            logger.clientInfo(
+              'Loaded existing order from localStorage (fallback)',
+              {
+                itemsCount: storedOrder.items.length,
+                totalAmount: storedOrder.totalAmount,
+              }
+            )
+          } else {
+            // Create new order
+            const newOrder = {
+              birthdayId,
+              location,
+              guests,
+              items: [],
+              notes: '',
+              totalAmount: 0,
+              isSubmitted: false,
+              canModify,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+            }
+            setOrder(newOrder)
+            logger.clientInfo('Created new order (fallback)', newOrder)
+          }
         }
       }
     } catch (error) {
@@ -286,7 +377,7 @@ export default function PartyMenuPage() {
   }
 
   const submitOrder = async () => {
-    if (!order || order.isSubmitted) return
+    if (!order || !order.canModify) return // Check canModify instead of isSubmitted
 
     const minTotal = guests * PARTY_MENU_CONFIG.minOrderPerPerson
     if (order.totalAmount < minTotal) {
@@ -313,16 +404,53 @@ export default function PartyMenuPage() {
       })
 
       if (response.ok) {
+        const result = (await response.json()) as {
+          success: boolean
+          message?: string
+          canStillModify?: boolean
+          modificationDeadline?: string
+        }
+
         updateOrder(finalOrder)
         clearStoredOrder(birthdayId!)
-        toast.success(t('orderSubmitted'))
+
+        // Show detailed success message
+        const isUpdate = order.isSubmitted
+        toast.success(
+          language === 'en'
+            ? isUpdate
+              ? "Order updated successfully! We'll contact you soon to confirm the changes."
+              : "Order received successfully! You can still modify it until 1 day before your birthday. We'll contact you soon to confirm the details."
+            : isUpdate
+              ? 'შეკვეთა წარმატებით განახლდა! მალე დაგიკავშირდებით ცვლილებების დასადასტურებლად.'
+              : 'შეკვეთა წარმატებით მიღებულია! შეგიძლიათ კვლავ შეცვალოთ იგი დაბადების დღემდე 1 დღით ადრე. მალე დაგიკავშირდებით დეტალების დასადასტურებლად.',
+          {
+            duration: 8000, // Show for 8 seconds
+          }
+        )
       } else {
-        const error = await response.json()
-        toast.error(error.message || 'Failed to submit order')
+        const error = (await response.json()) as { message?: string }
+        toast.error(
+          language === 'en'
+            ? error.message ||
+                'Failed to submit order. Please try again or contact our manager.'
+            : error.message ||
+                'შეკვეთის გაგზავნა ვერ მოხერხდა. გთხოვთ, სცადოთ ხელახლა ან დაუკავშირდით ჩვენს მენეჯერს.',
+          {
+            duration: 6000, // Show for 6 seconds
+          }
+        )
       }
     } catch (error) {
       console.error('Error submitting order:', error)
-      toast.error('Failed to submit order')
+      toast.error(
+        language === 'en'
+          ? 'Failed to submit order due to connection issues. Your order is saved locally - please try again or contact our manager.'
+          : 'შეკვეთის გაგზავნა ვერ მოხერხდა კავშირის პრობლემების გამო. თქვენი შეკვეთა ლოკალურად არის შენახული - გთხოვთ, სცადოთ ხელახლა ან დაუკავშირდით ჩვენს მენეჯერს.',
+        {
+          duration: 8000, // Show for 8 seconds
+        }
+      )
     } finally {
       setSubmitting(false)
     }
@@ -425,8 +553,13 @@ export default function PartyMenuPage() {
           <CardHeader>
             <CardTitle className="flex justify-between items-center text-gray-800">
               <span>{birthday.customerName || `Birthday #${birthdayId}`}</span>
-              {order.isSubmitted && <Badge variant="default">Submitted</Badge>}
-              {!order.canModify && !order.isSubmitted && (
+              {order.isSubmitted && order.canModify && (
+                <Badge variant="default">{t('submittedCanModify')}</Badge>
+              )}
+              {order.isSubmitted && !order.canModify && (
+                <Badge variant="secondary">{t('submittedReadOnly')}</Badge>
+              )}
+              {!order.isSubmitted && !order.canModify && (
                 <Badge variant="secondary">Read Only</Badge>
               )}
             </CardTitle>
@@ -448,6 +581,25 @@ export default function PartyMenuPage() {
                 {order.totalAmount} {t('gel')}
               </div>
             </div>
+            {order.isSubmitted && (
+              <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded">
+                <p className="text-green-800 text-sm">
+                  ✅{' '}
+                  <strong>
+                    {language === 'en'
+                      ? 'Order received!'
+                      : 'შეკვეთა მიღებულია!'}
+                  </strong>{' '}
+                  {order.canModify
+                    ? language === 'en'
+                      ? "You can still modify it until 1 day before your birthday. We'll contact you soon."
+                      : 'შეგიძლიათ კვლავ შეცვალოთ იგი დაბადების დღემდე 1 დღით ადრე. მალე დაგიკავშირდებით.'
+                    : language === 'en'
+                      ? "The modification deadline has passed. We'll contact you soon to confirm the details."
+                      : 'შეცვლის ვადა ამოიწურა. მალე დაგიკავშირდებით დეტალების დასადასტურებლად.'}
+                </p>
+              </div>
+            )}
             {!isOrderValid && (
               <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded">
                 <p className="text-yellow-800 text-sm">
@@ -700,6 +852,13 @@ export default function PartyMenuPage() {
                           />
                         </div>
 
+                        {/* Helpful message about order modification */}
+                        <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                          <p className="text-sm text-blue-800">
+                            {t('orderModificationInfo')}
+                          </p>
+                        </div>
+
                         <Button
                           onClick={submitOrder}
                           disabled={!isOrderValid || submitting}
@@ -708,7 +867,9 @@ export default function PartyMenuPage() {
                           {submitting ? (
                             <Loader2 className="h-4 w-4 animate-spin mr-2" />
                           ) : null}
-                          {t('submitOrder')}
+                          {order.isSubmitted
+                            ? t('updateOrder')
+                            : t('submitOrder')}
                         </Button>
                       </>
                     )}

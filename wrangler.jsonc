@@ -5,7 +5,7 @@
   "compatibility_flags": ["nodejs_compat"],
   "pages_build_output_dir": ".vercel/output/static",
   
-  // Environment variables (add your own as needed)
+  // Environment variables (non-sensitive values)
   "vars": {
     "NODE_ENV": "production",
     "NOTION_DATABASE_ID": "7c2bd07e-8bce-4a01-be92-531874f8c760",
@@ -13,7 +13,15 @@
     "POSTER_BASE_URL_CAFE": "https://joinposter.com/api",
     "POSTER_BASE_URL_PARK": "https://joinposter.com/api",
     "NEXT_PUBLIC_BASE_URL": "https://bd.gymnasia.ge"
-  }
+  },
+  
+  // Secrets (sensitive values) - these must be set via wrangler secret put command
+  // Run these commands to set your secrets:
+  // wrangler secret put NOTION_SECRET --env production
+  // wrangler secret put POSTER_TOKEN --env production
+  // wrangler secret put POSTER_TOKEN_CAFE --env production
+  // wrangler secret put POSTER_TOKEN_PARK --env production
+  // wrangler secret put SLACK_WEBHOOK_URL --env production
   
   // Custom domain configuration
   // Note: Domain must be added to your Cloudflare account and configured in Pages dashboard
@@ -45,12 +53,13 @@
   // ],
   
   // R2 buckets for object storage
-  // "r2_buckets": [
-  //   {
-  //     "binding": "MY_BUCKET",
-  //     "bucket_name": "birthday-assets"
-  //   }
-  // ],
+  "r2_buckets": [
+    {
+      "binding": "ORDERS_BUCKET",
+      "bucket_name": "birthday-orders",
+      "preview_bucket_name": "birthday-orders-preview"
+    }
+  ]
   
   // Workers AI for AI features
   // "ai": {
