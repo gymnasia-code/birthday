@@ -3,6 +3,14 @@ import { NextRequest, NextResponse } from 'next/server'
 export const runtime = 'edge'
 
 export async function GET() {
+  // Block test endpoints in production
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json(
+      { error: 'Test endpoints are not available in production' },
+      { status: 404 }
+    )
+  }
+
   return NextResponse.json({
     hasNotionSecret: !!process.env.NOTION_SECRET,
     hasNotionDatabaseId: !!process.env.NOTION_DATABASE_ID,

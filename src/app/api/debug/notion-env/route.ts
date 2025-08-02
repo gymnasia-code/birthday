@@ -3,6 +3,14 @@ import { NextResponse } from 'next/server'
 export const runtime = 'edge'
 
 export async function GET() {
+  // Block debug endpoints in production
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json(
+      { error: 'Debug endpoints are not available in production' },
+      { status: 404 }
+    )
+  }
+
   try {
     // Check specific environment variables that might be causing issues
     const notionSecret = process.env.NOTION_SECRET

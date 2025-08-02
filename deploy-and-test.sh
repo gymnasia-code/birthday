@@ -24,26 +24,17 @@ if [ $? -eq 0 ]; then
         sleep 10
         
         echo ""
-        echo "Testing /api/test/env endpoint:"
-        curl -s https://bd.gymnasia.ge/api/test/env | jq .
-        
-        echo ""
-        echo "🔍 Testing Notion environment debug:"
-        curl -s https://bd.gymnasia.ge/api/debug/notion-env | jq .
-        
-        echo ""
-        echo "🔍 Testing Poster environment debug:"
-        curl -s https://bd.gymnasia.ge/api/debug/poster-env | jq .
+        echo "Testing /api/hello endpoint:"
+        curl -s https://bd.gymnasia.ge/api/hello | jq .
         
         echo ""
         echo "🎉 Deployment complete!"
         echo ""
         echo "🔗 URLs to test:"
-        echo "   • Environment check: https://bd.gymnasia.ge/api/test/env"
-        echo "   • Notion debug: https://bd.gymnasia.ge/api/debug/notion-env"
-        echo "   • Poster debug: https://bd.gymnasia.ge/api/debug/poster-env"
-        echo "   • Debug page: https://bd.gymnasia.ge/debug"
+        echo "   • API health check: https://bd.gymnasia.ge/api/hello"
         echo "   • Main app: https://bd.gymnasia.ge"
+        echo ""
+        echo "ℹ️  Debug endpoints are disabled in production for security"
         
     else
         echo "❌ Deployment failed!"

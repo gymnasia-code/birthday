@@ -1,23 +1,15 @@
 #!/bin/bash
 
-echo "🔍 Quick Environment Debug Test"
-echo "================================"
+echo "🔍 Quick Production Health Check"
+echo "================================="
 echo ""
 
-echo "📝 Testing general environment variables:"
-curl -s https://bd.gymnasia.ge/api/test/env | jq .
+echo "📝 Testing API health:"
+curl -s https://bd.gymnasia.ge/api/hello | jq .
 
 echo ""
-echo "🔍 Testing Notion environment specifically:"
-curl -s https://bd.gymnasia.ge/api/debug/notion-env | jq .
-
-echo ""
-echo "🔍 Testing Poster environment specifically:"
-curl -s https://bd.gymnasia.ge/api/debug/poster-env | jq .
-
-echo ""
-echo "🧪 Testing actual Notion connection:"
-curl -s https://bd.gymnasia.ge/api/test/notion | jq .
+echo "ℹ️  Debug endpoints are disabled in production for security."
+echo "   For debugging issues, please check server logs or use development environment."
 
 echo ""
 echo "🧪 Testing actual Poster connection:"

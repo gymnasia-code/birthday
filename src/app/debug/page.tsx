@@ -1,14 +1,43 @@
 'use client'
 
 import Link from 'next/link'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 export default function DebugPage() {
+  const [isProduction, setIsProduction] = useState(false)
   const [notionTest, setNotionTest] = useState<any>(null)
   const [posterTest, setPosterTest] = useState<any>(null)
   const [envTest, setEnvTest] = useState<any>(null)
   const [birthdaysTest, setBirthdaysTest] = useState<any>(null)
   const [loading, setLoading] = useState<string | null>(null)
+
+  // Check if we're in production
+  useEffect(() => {
+    // In production builds, this will be 'production'
+    setIsProduction(process.env.NODE_ENV === 'production')
+  }, [])
+
+  // If in production, show error message
+  if (isProduction) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center p-8 bg-white rounded-lg shadow-lg max-w-md">
+          <h1 className="text-2xl font-bold text-red-600 mb-4">
+            Page Not Available
+          </h1>
+          <p className="text-gray-600 mb-6">
+            Debug pages are not available in production environment.
+          </p>
+          <Link 
+            href="/"
+            className="inline-block px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+          >
+            Go Home
+          </Link>
+        </div>
+      </div>
+    )
+  }
 
   // Use a placeholder ID - we'll get real IDs from the birthday list
   const [selectedBirthdayId, setSelectedBirthdayId] = useState('123')

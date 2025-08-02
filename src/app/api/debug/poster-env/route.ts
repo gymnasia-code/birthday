@@ -3,6 +3,14 @@ import { NextResponse } from 'next/server'
 export const runtime = 'edge'
 
 export async function GET() {
+  // Block debug endpoints in production
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json(
+      { error: 'Debug endpoints are not available in production' },
+      { status: 404 }
+    )
+  }
+
   try {
     // Check all Poster-related environment variables
     const posterToken = process.env.POSTER_TOKEN

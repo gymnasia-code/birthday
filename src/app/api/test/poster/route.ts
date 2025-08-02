@@ -4,6 +4,14 @@ import { logger } from '@/lib/utils/logger'
 export const runtime = 'edge'
 
 export async function GET() {
+  // Block test endpoints in production
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json(
+      { error: 'Test endpoints are not available in production' },
+      { status: 404 }
+    )
+  }
+
   try {
     logger.serverInfo('Testing Poster API connection')
 
