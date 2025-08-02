@@ -232,22 +232,13 @@ async function getCafeMenu(
 
   // Apply different filtering based on menu type
   if (isBirthdayMenu) {
-    // For birthday menu, filter to only birthday menu items and apply intelligent sorting
-    processedItems = processedItems.filter(item => {
-      // Check if item belongs to birthday menu based on category
-      const belongsToBirthdayMenu =
-        item.category === 'Birthday Party' ||
-        item.categoryGE === 'Birthday Party' ||
-        item.category?.toLowerCase().includes('birthday')
-
-      return belongsToBirthdayMenu
-    })
-
+    // For birthday menu requests, return all items with photos (frontend will filter)
     processedItems = sortMenuItemsIntelligently(processedItems)
     logger.serverDebug(
-      'Applied birthday menu filtering and intelligent sorting',
+      'Applied intelligent sorting for birthday menu request',
       {
         itemCount: processedItems.length,
+        filterType: 'frontend_filtering',
       }
     )
   } else {
@@ -263,6 +254,7 @@ async function getCafeMenu(
 
     logger.serverDebug('Applied cafe menu filtering', {
       itemCount: processedItems.length,
+      filterType: 'tv_barcode_only',
     })
   }
 
