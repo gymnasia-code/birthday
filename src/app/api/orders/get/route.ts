@@ -1,14 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getR2Storage } from '@/lib/utils/r2-storage'
 import { logger } from '@/lib/utils/logger'
+import { getR2BucketFromEnv } from '@/lib/utils/cloudflare-env'
 
 export const runtime = 'edge'
 
-interface Env {
-  ORDERS_BUCKET: R2Bucket
-}
-
-export async function GET(request: NextRequest, { env }: { env: Env }) {
+export async function GET(request: NextRequest, context?: any) {
   const { searchParams } = new URL(request.url)
   const birthdayId = searchParams.get('birthdayId')
 
@@ -23,8 +20,10 @@ export async function GET(request: NextRequest, { env }: { env: Env }) {
       )
     }
 
-    // Check if R2 bucket is available
-    if (!env?.ORDERS_BUCKET) {
+    // Try to get R2 bucket using the helper function
+    const ordersBucket = getR2BucketFromEnv(request, context)
+
+    if (!ordersBucket) {
       logger.serverError('R2 bucket not available in environment')
       return NextResponse.json(
         { error: 'Storage service not available' },
@@ -34,7 +33,7 @@ export async function GET(request: NextRequest, { env }: { env: Env }) {
 
     // Get R2 storage instance
     const r2Storage = getR2Storage({
-      ORDERS_BUCKET: env.ORDERS_BUCKET,
+      ORDERS_BUCKET: ordersBucket,
     })
 
     // Try to get the latest order for this birthday
