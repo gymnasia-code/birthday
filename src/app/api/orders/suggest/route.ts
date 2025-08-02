@@ -4,7 +4,7 @@ import { MenuItem, OrderItem, PartyOrder } from '@/types/party-menu'
 import { PARTY_MENU_CONFIG } from '@/config/party-menu'
 import { getR2Storage } from '@/lib/utils/r2-storage'
 import { logger } from '@/lib/utils/logger'
-import { isBirthdayMenuItem } from '@/lib/utils/menu-categorization'
+import { getR2BucketFromEnv, getEnvVar } from '@/lib/utils/cloudflare-env'
 
 export const runtime = 'edge'
 
@@ -44,21 +44,11 @@ export async function POST(
       )
     }
 
-    // Try to get R2 bucket from different possible sources
-    const ordersBucket =
-      context?.env?.ORDERS_BUCKET ||
-      (process.env as any).ORDERS_BUCKET ||
-      (global as any).ORDERS_BUCKET
+    // Try to get R2 bucket using the helper function
+    const ordersBucket = getR2BucketFromEnv(request, context)
 
     if (!ordersBucket) {
-      logger.serverError('R2 bucket not available in environment', {
-        hasContext: !!context,
-        hasEnv: !!context?.env,
-        envKeys: context?.env ? Object.keys(context.env) : [],
-        processEnvKeys: Object.keys(process.env).filter(k =>
-          k.includes('BUCKET')
-        ),
-      })
+      logger.serverError('R2 bucket not available in environment')
       return NextResponse.json(
         { error: 'Storage service not available' },
         { status: 500 }
@@ -84,12 +74,12 @@ export async function POST(
       )
     }
 
-    // Fetch menu from the menu API
-    logger.serverDebug('Fetching menu from API', { location })
+    // Fetch birthday menu from the menu API (birthday=true ensures only birthday menu items)
+    logger.serverDebug('Fetching birthday menu from API', { location })
     const baseUrl =
       process.env.NEXT_PUBLIC_BASE_URL || request.url.split('/api')[0]
     const menuResponse = await fetch(
-      `${baseUrl}/api/menu?location=${encodeURIComponent(location)}`
+      `${baseUrl}/api/menu?location=${encodeURIComponent(location)}&birthday=true`
     )
 
     if (!menuResponse.ok) {
@@ -108,16 +98,15 @@ export async function POST(
     const menu: MenuItem[] = menuData.menu || []
 
     if (menu.length === 0) {
-      logger.serverWarn('No menu items found', { location })
+      logger.serverWarn('No birthday menu items found', { location })
       return NextResponse.json(
-        { error: 'No menu items available' },
+        { error: 'No birthday menu items available' },
         { status: 500 }
       )
     }
 
     // Initialize Google AI
-    const apiKey =
-      context?.env?.GOOGLE_AI_API_KEY || process.env.GOOGLE_AI_API_KEY
+    const apiKey = getEnvVar('GOOGLE_AI_API_KEY', context)
     if (!apiKey) {
       logger.serverError('Google AI API key missing')
       return NextResponse.json(
@@ -134,10 +123,8 @@ export async function POST(
     const minOrderAmount = totalGuests * PARTY_MENU_CONFIG.minOrderPerPerson
     const targetAmount = Math.round(minOrderAmount * 1.15) // 15% above minimum
 
-    // Filter only birthday menu items using smart categorization
-    const birthdayMenu = menu.filter((item: MenuItem) =>
-      isBirthdayMenuItem(item)
-    )
+    // Menu items are already filtered to birthday menu items by the API
+    const birthdayMenu = menu
 
     // Create detailed prompt
     const prompt = `You are an expert party menu planner for a Georgian birthday party. Please suggest an optimal menu order based on the following requirements:
