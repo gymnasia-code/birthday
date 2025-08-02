@@ -1,0 +1,22 @@
+{
+  "name": "Gymnasia Birthday Party Menu",
+  "short_name": "Gymnasia Party",
+  "description": "Order your perfect birthday party menu at Gymnasia",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#3b82f6",
+  "orientation": "portrait-primary",
+  "categories": ["food", "lifestyle", "entertainment"],
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "32x32",
+      "type": "image/x-icon"
+    }
+  ],
+  "lang": "en",
+  "dir": "ltr",
+  "scope": "/",
+  "prefer_related_applications": false
+}

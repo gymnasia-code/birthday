@@ -3,6 +3,21 @@
 import Link from 'next/link'
 import { useState, useEffect } from 'react'
 
+// Generate metadata for the debug page
+export function generateMetadata() {
+  return {
+    title: 'Debug Panel - Development Only',
+    description:
+      'Development debug panel for testing API endpoints and environment variables. Not available in production.',
+    robots: {
+      index: false,
+      follow: false,
+      noarchive: true,
+      nosnippet: true,
+    },
+  }
+}
+
 export default function DebugPage() {
   const [isProduction, setIsProduction] = useState(false)
   const [notionTest, setNotionTest] = useState<any>(null)

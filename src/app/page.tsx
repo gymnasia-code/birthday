@@ -3,6 +3,36 @@ import Link from 'next/link'
 // Specify Edge Runtime for Cloudflare compatibility
 export const runtime = 'edge'
 
+// Generate metadata for the home page
+export function generateMetadata() {
+  return {
+    title: '4-Wall Projection System - Immersive Harry Potter Experience',
+    description:
+      'Experience the magic with our 4-wall projection system featuring interactive Harry Potter scenes. Immersive 3D environments with real-time modifiers and synchronized multi-wall displays.',
+    keywords: [
+      '4-wall projection',
+      'Harry Potter experience',
+      'immersive projection',
+      '3D scenes',
+      'interactive display',
+      'Forbidden Forest',
+      'projection mapping',
+    ],
+    openGraph: {
+      title: '4-Wall Projection System - Immersive Harry Potter Experience',
+      description:
+        'Experience the magic with our 4-wall projection system featuring interactive Harry Potter scenes and real-time modifiers.',
+      type: 'website',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: '4-Wall Projection System - Immersive Experience',
+      description:
+        'Experience the magic with our 4-wall projection system featuring interactive Harry Potter scenes.',
+    },
+  }
+}
+
 export default function Home() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-black text-white">

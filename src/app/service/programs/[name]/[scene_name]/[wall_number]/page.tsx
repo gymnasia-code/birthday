@@ -15,6 +15,44 @@ interface WallPageProps {
   }>
 }
 
+// Generate metadata for projection wall pages
+export function generateMetadata({
+  params,
+}: {
+  params: Promise<{ name: string; scene_name: string; wall_number: string }>
+}) {
+  return params.then(({ name, scene_name, wall_number }) => {
+    const programName = name
+      .replace(/-/g, ' ')
+      .replace(/\b\w/g, l => l.toUpperCase())
+    const sceneName = scene_name
+      .replace(/-/g, ' ')
+      .replace(/\b\w/g, l => l.toUpperCase())
+
+    return {
+      title: `${programName} - ${sceneName} (Wall ${wall_number})`,
+      description: `Interactive ${programName} experience featuring ${sceneName}. Wall ${wall_number} projection view with real-time 3D rendering and dynamic modifiers.`,
+      keywords: [
+        'projection',
+        'immersive experience',
+        programName,
+        sceneName,
+        '3D rendering',
+        'interactive display',
+      ],
+      robots: {
+        index: false, // Don't index individual wall views
+        follow: false,
+      },
+      openGraph: {
+        title: `${programName} - ${sceneName} Experience`,
+        description: `Interactive projection experience featuring ${sceneName} with real-time 3D rendering.`,
+        type: 'website',
+      },
+    }
+  })
+}
+
 export default function WallPage({ params }: WallPageProps) {
   const [resolvedParams, setResolvedParams] = useState<{
     name: string

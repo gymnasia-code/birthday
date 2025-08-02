@@ -35,6 +35,40 @@ import {
 
 export const runtime = 'edge'
 
+// Generate metadata for the party menu page
+export function generateMetadata() {
+  return {
+    title: 'Party Menu - Order Your Birthday Celebration',
+    description:
+      'Browse and order from our specially curated birthday party menu. Choose from birthday-specific treats, cafe favorites, and special dishes perfect for kids and adults celebrations.',
+    keywords: [
+      'birthday party menu',
+      'party ordering',
+      'birthday food',
+      'party catering',
+      'kids birthday',
+      'celebration menu',
+      'Gymnasia party',
+    ],
+    openGraph: {
+      title: 'Party Menu - Order Your Birthday Celebration | Gymnasia',
+      description:
+        'Browse and order from our specially curated birthday party menu. Perfect for kids and adults celebrations.',
+      type: 'website',
+    },
+    twitter: {
+      card: 'summary',
+      title: 'Party Menu - Order Your Birthday Celebration',
+      description:
+        'Browse and order from our specially curated birthday party menu. Perfect for kids and adults celebrations.',
+    },
+    robots: {
+      index: false, // Don't index individual order pages
+      follow: false,
+    },
+  }
+}
+
 export default function PartyMenuPage() {
   const searchParams = useSearchParams()
   const birthdayId = searchParams?.get('birthdayId')
