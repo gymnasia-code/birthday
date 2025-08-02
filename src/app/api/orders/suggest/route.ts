@@ -36,6 +36,29 @@ export async function POST(
     const body = (await request.json()) as SuggestionRequest
     const { birthdayId, kids, adults, currentOrder, location } = body
 
+    // Calculate expected guest count and check for consistency
+    const expectedGuests = kids + adults
+    const orderGuests = currentOrder.guests
+
+    logger.serverInfo('AI suggestion API called', {
+      birthdayId,
+      kids,
+      adults,
+      expectedGuests,
+      orderGuests,
+      guestCountMismatch: orderGuests !== expectedGuests,
+    })
+
+    if (orderGuests !== expectedGuests) {
+      logger.serverWarn('Guest count mismatch in AI suggestion request', {
+        birthdayId,
+        kids,
+        adults,
+        expectedGuests,
+        orderGuests,
+      })
+    }
+
     // Validate request
     if (!birthdayId || !location) {
       return NextResponse.json(

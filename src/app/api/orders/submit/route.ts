@@ -21,15 +21,41 @@ export async function POST(
   try {
     const { order, birthday }: OrderSubmissionRequest = await request.json()
 
+    // Calculate the correct guest count from birthday data to avoid localStorage inconsistencies
+    const kidsCount = Number(birthday.kidsQuantity) || 0
+    const adultsCount = Number(birthday.adultsQuantity) || 0
+    const calculatedGuests = kidsCount + adultsCount
+
+    // Use the calculated guest count instead of potentially stale order.guests
+    const correctedOrder = {
+      ...order,
+      guests: calculatedGuests,
+    }
+
     logger.serverInfo('Order submission received', {
       birthdayId: order.birthdayId,
       location: order.location,
-      kids: birthday.kidsQuantity || 0,
-      adults: birthday.adultsQuantity || 0,
-      guests: order.guests,
+      kids: kidsCount,
+      adults: adultsCount,
+      originalGuests: order.guests,
+      calculatedGuests: calculatedGuests,
+      guestCountMismatch: order.guests !== calculatedGuests,
       totalAmount: order.totalAmount,
       itemsCount: order.items.length,
     })
+
+    if (order.guests !== calculatedGuests) {
+      logger.serverWarn(
+        'Guest count mismatch detected, using calculated value',
+        {
+          birthdayId: order.birthdayId,
+          orderGuests: order.guests,
+          calculatedGuests: calculatedGuests,
+          kids: kidsCount,
+          adults: adultsCount,
+        }
+      )
+    }
 
     if (!order.birthdayId || !order.location) {
       logger.serverWarn('Order submission missing required fields', {
@@ -63,67 +89,70 @@ export async function POST(
       )
     }
 
-    // Validate minimum order amount
+    // Validate minimum order amount using corrected guest count
     const minOrderPerPerson = 50 // This should come from config
-    const requiredTotal = order.guests * minOrderPerPerson
+    const requiredTotal = correctedOrder.guests * minOrderPerPerson
 
     logger.serverDebug('Order validation', {
-      totalAmount: order.totalAmount,
+      totalAmount: correctedOrder.totalAmount,
       requiredTotal,
       minOrderPerPerson,
-      guests: order.guests,
+      guests: correctedOrder.guests,
     })
 
-    if (order.totalAmount < requiredTotal) {
+    if (correctedOrder.totalAmount < requiredTotal) {
       logger.serverWarn('Order below minimum amount', {
-        totalAmount: order.totalAmount,
+        totalAmount: correctedOrder.totalAmount,
         requiredTotal,
       })
       return NextResponse.json(
         {
-          error: `Order total (${order.totalAmount} GEL) is below minimum required (${requiredTotal} GEL)`,
+          error: `Order total (${correctedOrder.totalAmount} GEL) is below minimum required (${requiredTotal} GEL)`,
         },
         { status: 400 }
       )
     }
 
-    // Save order to R2 storage
-    logger.serverDebug('Saving order to R2 storage')
+    // Save corrected order to R2 storage
+    logger.serverDebug('Saving corrected order to R2 storage')
     const r2Storage = getR2Storage({
       ORDERS_BUCKET: ordersBucket,
     })
-    await r2Storage.saveOrder(order)
+    await r2Storage.saveOrder(correctedOrder)
     logger.serverInfo('Order saved to R2 storage', {
-      birthdayId: order.birthdayId,
+      birthdayId: correctedOrder.birthdayId,
     })
 
     // TODO: Update Notion with order status
     logger.serverDebug('Updating Notion order status')
-    await updateNotionOrderStatus(order.birthdayId, 'submitted')
+    await updateNotionOrderStatus(correctedOrder.birthdayId, 'submitted')
     logger.serverInfo('Notion order status updated')
 
     // Send Slack notification
     logger.serverDebug('Sending Slack notification')
     await sendSlackNotification(
-      order,
+      correctedOrder,
       birthday,
       context?.env?.SLACK_WEBHOOK_URL || process.env.SLACK_WEBHOOK_URL
     )
     logger.serverInfo('Slack notification sent')
 
     logger.serverInfo('Order submission completed successfully', {
-      birthdayId: order.birthdayId,
-      totalAmount: order.totalAmount,
-      itemsCount: order.items.length,
+      birthdayId: correctedOrder.birthdayId,
+      totalAmount: correctedOrder.totalAmount,
+      itemsCount: correctedOrder.items.length,
+      finalGuests: correctedOrder.guests,
     })
 
     return NextResponse.json({
       success: true,
-      orderId: `${order.birthdayId}-${Date.now()}`,
+      orderId: `${correctedOrder.birthdayId}-${Date.now()}`,
       message:
         'Order received successfully! Your order has been saved and you can still modify it until 1 day before your birthday. We will contact you soon to confirm the details.',
       canStillModify: true,
       modificationDeadline: '1 day before your birthday',
+      guestCountCorrected: order.guests !== calculatedGuests,
+      correctedGuests: correctedOrder.guests,
     })
   } catch (error) {
     const errorMessage =
@@ -194,6 +223,10 @@ async function sendSlackNotification(
     day: 'numeric',
   })
 
+  // Calculate kids and adults from birthday data for consistent display
+  const kidsCount = Number(birthday.kidsQuantity) || 0
+  const adultsCount = Number(birthday.adultsQuantity) || 0
+
   const message = {
     text: `🎉 New birthday order submitted!`,
     blocks: [
@@ -201,7 +234,7 @@ async function sendSlackNotification(
         type: 'section',
         text: {
           type: 'mrkdwn',
-          text: `*Birthday ID:* ${order.birthdayId}\n*Customer:* ${birthday.customerName || 'N/A'}\n*Location:* ${order.location}\n*Kids:* ${order.kids}\n*Adults:* ${order.adults}\n*Total Guests:* ${order.guests}\n*Total Amount:* ${order.totalAmount} GEL\n*Date:* ${formattedDate}`,
+          text: `*Birthday ID:* ${order.birthdayId}\n*Customer:* ${birthday.customerName || 'N/A'}\n*Location:* ${order.location}\n*Kids:* ${kidsCount}\n*Adults:* ${adultsCount}\n*Total Guests:* ${order.guests}\n*Total Amount:* ${order.totalAmount} GEL\n*Date:* ${formattedDate}`,
         },
       },
       {
