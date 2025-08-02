@@ -12,7 +12,7 @@ export const PARTY_MENU_CONFIG = {
   maxGuests: 200,
 
   // Manager contact phone
-  managerPhone: '+995 555 123 456',
+  managerPhone: '+995 598 901 990',
 
   // Available locations
   locations: ['Gymnasia Amashukeli 14a', 'Sports Park'] as const,
