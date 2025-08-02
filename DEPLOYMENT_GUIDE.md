@@ -9,6 +9,7 @@
 **Root Cause:** The R2 bucket binding is not properly configured in the Cloudflare Pages deployment.
 
 **Solutions Applied:**
+
 1. ✅ Fixed API routes to handle multiple environment access patterns
 2. ✅ Added comprehensive environment debugging
 3. ✅ Created helper functions for environment variable access
@@ -16,11 +17,13 @@
 ### 2. Deployment Steps
 
 #### Prerequisites
+
 - Cloudflare account with Pages enabled
 - R2 storage enabled in your Cloudflare account
 - All required API keys and tokens
 
 #### Step 1: Create R2 Buckets
+
 ```bash
 # Create production bucket
 wrangler r2 bucket create birthday-orders
@@ -30,6 +33,7 @@ wrangler r2 bucket create birthday-orders-preview
 ```
 
 #### Step 2: Configure Cloudflare Pages Project
+
 1. Go to Cloudflare Dashboard → Pages
 2. Create a new Pages project or select existing `birthday-app`
 3. Go to Settings → Functions
@@ -39,6 +43,7 @@ wrangler r2 bucket create birthday-orders-preview
    - Preview bucket: `birthday-orders-preview`
 
 #### Step 3: Set Environment Variables
+
 ```bash
 # Set all required secrets
 wrangler pages secret put NOTION_SECRET --env production
@@ -50,6 +55,7 @@ wrangler pages secret put GOOGLE_AI_API_KEY --env production
 ```
 
 #### Step 4: Deploy Application
+
 ```bash
 # Build the application
 npm run build
@@ -61,6 +67,7 @@ wrangler pages deploy .vercel/output/static --project-name birthday-app
 ### 3. Testing the Fixes
 
 #### Test R2 Environment Setup
+
 ```bash
 curl https://bd.gymnasia.ge/api/debug/r2-env
 ```
@@ -68,11 +75,13 @@ curl https://bd.gymnasia.ge/api/debug/r2-env
 This endpoint will show you exactly how the environment is structured and help debug R2 access issues.
 
 #### Test Order Retrieval
+
 ```bash
 curl "https://bd.gymnasia.ge/api/orders/get?birthdayId=1319"
 ```
 
 #### Test AI Suggestions
+
 ```bash
 curl 'https://bd.gymnasia.ge/api/orders/suggest' \
   -H 'Content-Type: application/json' \
@@ -101,15 +110,18 @@ curl 'https://bd.gymnasia.ge/api/orders/suggest' \
 If the R2 bucket binding still doesn't work, we have these backup options:
 
 #### Option A: Use Cloudflare KV Store
+
 - Modify `wrangler.jsonc` to use KV instead of R2
 - Update storage utilities to use KV API
 
 #### Option B: Use External Storage
+
 - Use AWS S3 or Google Cloud Storage
 - Store credentials as secrets
 - Modify storage utilities to use external APIs
 
 #### Option C: Use D1 Database
+
 - Enable D1 database in wrangler.jsonc
 - Store orders as JSON in database tables
 - More reliable than R2 for this use case
@@ -117,11 +129,13 @@ If the R2 bucket binding still doesn't work, we have these backup options:
 ### 5. Monitoring and Debugging
 
 #### Check Deployment Logs
+
 ```bash
 wrangler pages deployment tail --project-name birthday-app
 ```
 
 #### Verify Environment Configuration
+
 ```bash
 # Check Pages project settings
 wrangler pages project list

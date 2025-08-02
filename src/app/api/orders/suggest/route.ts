@@ -26,7 +26,10 @@ interface AISuggestionResponse {
   explanation: string
 }
 
-export async function POST(request: NextRequest, context?: { env?: { ORDERS_BUCKET: R2Bucket; GOOGLE_AI_API_KEY: string } }) {
+export async function POST(
+  request: NextRequest,
+  context?: { env?: { ORDERS_BUCKET: R2Bucket; GOOGLE_AI_API_KEY: string } }
+) {
   logger.serverInfo('AI suggestion API called')
 
   try {
@@ -42,16 +45,19 @@ export async function POST(request: NextRequest, context?: { env?: { ORDERS_BUCK
     }
 
     // Try to get R2 bucket from different possible sources
-    const ordersBucket = context?.env?.ORDERS_BUCKET || 
-                        (process.env as any).ORDERS_BUCKET ||
-                        (global as any).ORDERS_BUCKET
+    const ordersBucket =
+      context?.env?.ORDERS_BUCKET ||
+      (process.env as any).ORDERS_BUCKET ||
+      (global as any).ORDERS_BUCKET
 
     if (!ordersBucket) {
       logger.serverError('R2 bucket not available in environment', {
         hasContext: !!context,
         hasEnv: !!context?.env,
         envKeys: context?.env ? Object.keys(context.env) : [],
-        processEnvKeys: Object.keys(process.env).filter(k => k.includes('BUCKET')),
+        processEnvKeys: Object.keys(process.env).filter(k =>
+          k.includes('BUCKET')
+        ),
       })
       return NextResponse.json(
         { error: 'Storage service not available' },
@@ -110,7 +116,8 @@ export async function POST(request: NextRequest, context?: { env?: { ORDERS_BUCK
     }
 
     // Initialize Google AI
-    const apiKey = context?.env?.GOOGLE_AI_API_KEY || process.env.GOOGLE_AI_API_KEY
+    const apiKey =
+      context?.env?.GOOGLE_AI_API_KEY || process.env.GOOGLE_AI_API_KEY
     if (!apiKey) {
       logger.serverError('Google AI API key missing')
       return NextResponse.json(

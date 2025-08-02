@@ -43,16 +43,19 @@ export async function POST(
     }
 
     // Try to get R2 bucket from different possible sources
-    const ordersBucket = context?.env?.ORDERS_BUCKET || 
-                        (process.env as any).ORDERS_BUCKET ||
-                        (global as any).ORDERS_BUCKET
+    const ordersBucket =
+      context?.env?.ORDERS_BUCKET ||
+      (process.env as any).ORDERS_BUCKET ||
+      (global as any).ORDERS_BUCKET
 
     if (!ordersBucket) {
       logger.serverError('R2 bucket not available in environment', {
         hasContext: !!context,
         hasEnv: !!context?.env,
         envKeys: context?.env ? Object.keys(context.env) : [],
-        processEnvKeys: Object.keys(process.env).filter(k => k.includes('BUCKET')),
+        processEnvKeys: Object.keys(process.env).filter(k =>
+          k.includes('BUCKET')
+        ),
       })
       return NextResponse.json(
         { error: 'Storage service not available' },
@@ -101,7 +104,11 @@ export async function POST(
 
     // Send Slack notification
     logger.serverDebug('Sending Slack notification')
-    await sendSlackNotification(order, birthday, context?.env?.SLACK_WEBHOOK_URL || process.env.SLACK_WEBHOOK_URL)
+    await sendSlackNotification(
+      order,
+      birthday,
+      context?.env?.SLACK_WEBHOOK_URL || process.env.SLACK_WEBHOOK_URL
+    )
     logger.serverInfo('Slack notification sent')
 
     logger.serverInfo('Order submission completed successfully', {

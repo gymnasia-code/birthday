@@ -13,7 +13,9 @@ export async function GET(request: NextRequest, context?: any) {
     },
     env: {
       processEnvKeys: Object.keys(process.env),
-      processEnvBucketKeys: Object.keys(process.env).filter(k => k.includes('BUCKET')),
+      processEnvBucketKeys: Object.keys(process.env).filter(k =>
+        k.includes('BUCKET')
+      ),
       hasOrdersBucket: !!(process.env as any).ORDERS_BUCKET,
       ordersBucketType: typeof (process.env as any).ORDERS_BUCKET,
     },
