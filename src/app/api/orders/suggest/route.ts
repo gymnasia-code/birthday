@@ -13,7 +13,7 @@ interface SuggestionRequest {
   kids: number
   adults: number
   currentOrder: PartyOrder
-  menu: MenuItem[]
+  location: string // Add location to fetch the appropriate menu
 }
 
 interface AISuggestionResponse {
@@ -26,24 +26,36 @@ interface AISuggestionResponse {
   explanation: string
 }
 
-export async function POST(request: NextRequest) {
+export async function POST(
+  request: NextRequest,
+  { env }: { env: { ORDERS_BUCKET: R2Bucket; GOOGLE_AI_API_KEY: string } }
+) {
   logger.serverInfo('AI suggestion API called')
 
   try {
     const body = (await request.json()) as SuggestionRequest
-    const { birthdayId, kids, adults, currentOrder, menu } = body
+    const { birthdayId, kids, adults, currentOrder, location } = body
 
     // Validate request
-    if (!birthdayId || !menu || menu.length === 0) {
+    if (!birthdayId || !location) {
       return NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 }
       )
     }
 
+    // Check if R2 bucket is available
+    if (!env?.ORDERS_BUCKET) {
+      logger.serverError('R2 bucket not available in environment')
+      return NextResponse.json(
+        { error: 'Storage service not available' },
+        { status: 500 }
+      )
+    }
+
     // Check usage limits
     const r2Storage = getR2Storage({
-      ORDERS_BUCKET: process.env.ORDERS_BUCKET as any,
+      ORDERS_BUCKET: env.ORDERS_BUCKET,
     })
 
     const existingOrder = await r2Storage.getLatestOrder(birthdayId)
@@ -60,8 +72,39 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Fetch menu from the menu API
+    logger.serverDebug('Fetching menu from API', { location })
+    const baseUrl =
+      process.env.NEXT_PUBLIC_BASE_URL || request.url.split('/api')[0]
+    const menuResponse = await fetch(
+      `${baseUrl}/api/menu?location=${encodeURIComponent(location)}`
+    )
+
+    if (!menuResponse.ok) {
+      logger.serverError('Failed to fetch menu', {
+        location,
+        status: menuResponse.status,
+        statusText: menuResponse.statusText,
+      })
+      return NextResponse.json(
+        { error: 'Failed to fetch menu data' },
+        { status: 500 }
+      )
+    }
+
+    const menuData = (await menuResponse.json()) as { menu?: MenuItem[] }
+    const menu: MenuItem[] = menuData.menu || []
+
+    if (menu.length === 0) {
+      logger.serverWarn('No menu items found', { location })
+      return NextResponse.json(
+        { error: 'No menu items available' },
+        { status: 500 }
+      )
+    }
+
     // Initialize Google AI
-    const apiKey = process.env.GOOGLE_AI_API_KEY
+    const apiKey = env?.GOOGLE_AI_API_KEY
     if (!apiKey) {
       logger.serverError('Google AI API key missing')
       return NextResponse.json(
@@ -79,7 +122,9 @@ export async function POST(request: NextRequest) {
     const targetAmount = Math.round(minOrderAmount * 1.15) // 15% above minimum
 
     // Filter only birthday menu items using smart categorization
-    const birthdayMenu = menu.filter(item => isBirthdayMenuItem(item))
+    const birthdayMenu = menu.filter((item: MenuItem) =>
+      isBirthdayMenuItem(item)
+    )
 
     // Create detailed prompt
     const prompt = `You are an expert party menu planner for a Georgian birthday party. Please suggest an optimal menu order based on the following requirements:
@@ -106,7 +151,7 @@ IMPORTANT RULES:
 AVAILABLE MENU ITEMS:
 ${birthdayMenu
   .map(
-    item => `
+    (item: MenuItem) => `
 ID: ${item.id}
 Name: ${item.title} (${item.titleGE})
 Description: ${item.description}
@@ -179,7 +224,9 @@ Please respond with ONLY valid JSON, no additional text.`
 
     // Validate suggestions against available menu
     const validSuggestions = aiResponse.suggestions.filter(suggestion => {
-      const menuItem = birthdayMenu.find(item => item.id === suggestion.id)
+      const menuItem = birthdayMenu.find(
+        (item: MenuItem) => item.id === suggestion.id
+      )
       return menuItem && suggestion.quantity > 0
     })
 
@@ -193,7 +240,9 @@ Please respond with ONLY valid JSON, no additional text.`
 
     // Calculate actual total
     const actualTotal = validSuggestions.reduce((sum, suggestion) => {
-      const menuItem = birthdayMenu.find(item => item.id === suggestion.id)
+      const menuItem = birthdayMenu.find(
+        (item: MenuItem) => item.id === suggestion.id
+      )
       return sum + (menuItem ? menuItem.price * suggestion.quantity : 0)
     }, 0)
 
@@ -218,7 +267,9 @@ Please respond with ONLY valid JSON, no additional text.`
     return NextResponse.json({
       success: true,
       suggestions: validSuggestions.map(suggestion => {
-        const menuItem = birthdayMenu.find(item => item.id === suggestion.id)
+        const menuItem = birthdayMenu.find(
+          (item: MenuItem) => item.id === suggestion.id
+        )
         return {
           ...suggestion,
           menuItem,

@@ -17,11 +17,12 @@
   
   // Secrets (sensitive values) - these must be set via wrangler secret put command
   // Run these commands to set your secrets:
-  // wrangler secret put NOTION_SECRET --env production
-  // wrangler secret put POSTER_TOKEN --env production
-  // wrangler secret put POSTER_TOKEN_CAFE --env production
-  // wrangler secret put POSTER_TOKEN_PARK --env production
-  // wrangler secret put SLACK_WEBHOOK_URL --env production
+  // wrangler pages secret put NOTION_SECRET --env production
+  // wrangler pages secret put POSTER_TOKEN --env production
+  // wrangler pages secret put POSTER_TOKEN_CAFE --env production
+  // wrangler pages secret put POSTER_TOKEN_PARK --env production
+  // wrangler pages secret put SLACK_WEBHOOK_URL --env production
+  // wrangler pages secret put GOOGLE_AI_API_KEY --env production
   
   // Custom domain configuration
   // Note: Domain must be added to your Cloudflare account and configured in Pages dashboard

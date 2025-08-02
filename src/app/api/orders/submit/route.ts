@@ -14,7 +14,10 @@ interface OrderSubmissionRequest {
   birthday: Birthday
 }
 
-export async function POST(request: NextRequest) {
+export async function POST(
+  request: NextRequest,
+  { env }: { env: { ORDERS_BUCKET: R2Bucket; SLACK_WEBHOOK_URL?: string } }
+) {
   try {
     const { order, birthday }: OrderSubmissionRequest = await request.json()
 
@@ -36,6 +39,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: 'Birthday ID and location are required' },
         { status: 400 }
+      )
+    }
+
+    // Check if R2 bucket is available
+    if (!env?.ORDERS_BUCKET) {
+      logger.serverError('R2 bucket not available in environment')
+      return NextResponse.json(
+        { error: 'Storage service not available' },
+        { status: 500 }
       )
     }
 
@@ -66,7 +78,7 @@ export async function POST(request: NextRequest) {
     // Save order to R2 storage
     logger.serverDebug('Saving order to R2 storage')
     const r2Storage = getR2Storage({
-      ORDERS_BUCKET: process.env.ORDERS_BUCKET as any,
+      ORDERS_BUCKET: env.ORDERS_BUCKET,
     })
     await r2Storage.saveOrder(order)
     logger.serverInfo('Order saved to R2 storage', {
@@ -80,7 +92,7 @@ export async function POST(request: NextRequest) {
 
     // Send Slack notification
     logger.serverDebug('Sending Slack notification')
-    await sendSlackNotification(order, birthday)
+    await sendSlackNotification(order, birthday, env.SLACK_WEBHOOK_URL)
     logger.serverInfo('Slack notification sent')
 
     logger.serverInfo('Order submission completed successfully', {
@@ -126,10 +138,9 @@ async function updateNotionOrderStatus(
 
 async function sendSlackNotification(
   order: PartyOrder,
-  birthday: Birthday
+  birthday: Birthday,
+  slackWebhookUrl?: string
 ): Promise<void> {
-  const slackWebhookUrl = process.env.SLACK_WEBHOOK_URL
-
   if (!slackWebhookUrl) {
     console.warn('Slack webhook URL not configured')
     return

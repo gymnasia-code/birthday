@@ -8,7 +8,7 @@ interface Env {
   ORDERS_BUCKET: R2Bucket
 }
 
-export async function GET(request: NextRequest) {
+export async function GET(request: NextRequest, { env }: { env: Env }) {
   const { searchParams } = new URL(request.url)
   const birthdayId = searchParams.get('birthdayId')
 
@@ -23,9 +23,18 @@ export async function GET(request: NextRequest) {
       )
     }
 
+    // Check if R2 bucket is available
+    if (!env?.ORDERS_BUCKET) {
+      logger.serverError('R2 bucket not available in environment')
+      return NextResponse.json(
+        { error: 'Storage service not available' },
+        { status: 500 }
+      )
+    }
+
     // Get R2 storage instance
     const r2Storage = getR2Storage({
-      ORDERS_BUCKET: process.env.ORDERS_BUCKET as any,
+      ORDERS_BUCKET: env.ORDERS_BUCKET,
     })
 
     // Try to get the latest order for this birthday

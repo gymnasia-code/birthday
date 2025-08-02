@@ -28,7 +28,7 @@ export default function DebugPage() {
           <p className="text-gray-600 mb-6">
             Debug pages are not available in production environment.
           </p>
-          <Link 
+          <Link
             href="/"
             className="inline-block px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
           >

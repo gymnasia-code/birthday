@@ -447,18 +447,6 @@ export default function PartyMenuPage() {
     try {
       setSuggesting(true)
 
-      // Filter only birthday menu items for the request using smart categorization
-      const birthdayMenu = menu.filter(item => isBirthdayMenuItem(item))
-
-      if (birthdayMenu.length === 0) {
-        toast.error(
-          language === 'en'
-            ? 'No birthday menu items available for suggestions'
-            : 'დაბადების მენიუს ელემენტები მიუწვდომელია რეკომენდაციებისთვის'
-        )
-        return
-      }
-
       const response = await fetch('/api/orders/suggest', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -467,7 +455,7 @@ export default function PartyMenuPage() {
           kids,
           adults,
           currentOrder: order,
-          menu: birthdayMenu,
+          location: location,
         }),
       })
 
