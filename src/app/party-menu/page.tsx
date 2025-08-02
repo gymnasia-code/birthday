@@ -61,6 +61,8 @@ export default function PartyMenuPage() {
   const [suggesting, setSuggesting] = useState(false)
   const [notes, setNotes] = useState('')
   const [activeTab, setActiveTab] = useState<'birthday' | 'cafe'>('birthday')
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
+  const [originalOrderState, setOriginalOrderState] = useState<string>('')
 
   const t = (key: keyof typeof translations) => translations[key][language]
 
@@ -68,6 +70,42 @@ export default function PartyMenuPage() {
     const storedLang = getStoredLanguage()
     setLanguage(storedLang)
   }, [])
+
+  // Track changes to detect unsaved modifications
+  useEffect(() => {
+    if (order) {
+      const currentOrderState = JSON.stringify({
+        items: order.items,
+        notes: notes,
+        totalAmount: order.totalAmount,
+      })
+
+      if (originalOrderState === '') {
+        // Set initial state when order is first loaded
+        setOriginalOrderState(currentOrderState)
+        setHasUnsavedChanges(false)
+      } else {
+        // Check if current state differs from original
+        const hasChanges = currentOrderState !== originalOrderState
+        setHasUnsavedChanges(hasChanges)
+      }
+    }
+  }, [order, notes, originalOrderState])
+
+  // Prevent navigation if there are unsaved changes
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (hasUnsavedChanges) {
+        e.preventDefault()
+        e.returnValue =
+          'You have unsaved changes. Are you sure you want to leave?'
+        return 'You have unsaved changes. Are you sure you want to leave?'
+      }
+    }
+
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload)
+  }, [hasUnsavedChanges])
 
   const initializeData = useCallback(async () => {
     logger.clientInfo('Initializing party menu data', {
@@ -522,7 +560,10 @@ export default function PartyMenuPage() {
       const response = await fetch('/api/orders/submit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(finalOrder),
+        body: JSON.stringify({
+          order: finalOrder,
+          birthday: birthday, // Include birthday data for Notion link generation
+        }),
       })
 
       if (response.ok) {
@@ -536,16 +577,25 @@ export default function PartyMenuPage() {
         updateOrder(finalOrder)
         clearStoredOrder(birthdayId!)
 
+        // Reset unsaved changes state
+        const newOrderState = JSON.stringify({
+          items: finalOrder.items,
+          notes: finalOrder.notes || '',
+          totalAmount: finalOrder.totalAmount,
+        })
+        setOriginalOrderState(newOrderState)
+        setHasUnsavedChanges(false)
+
         // Show detailed success message
         const isUpdate = order.isSubmitted
         toast.success(
           language === 'en'
             ? isUpdate
               ? "Order updated successfully! We'll contact you soon to confirm the changes."
-              : "Order received successfully! You can still modify it until 1 day before your birthday. We'll contact you soon to confirm the details."
+              : "Order received successfully! We'll contact you soon to confirm the details."
             : isUpdate
               ? 'შეკვეთა წარმატებით განახლდა! მალე დაგიკავშირდებით ცვლილებების დასადასტურებლად.'
-              : 'შეკვეთა წარმატებით მიღებულია! შეგიძლიათ კვლავ შეცვალოთ იგი დაბადების დღემდე 1 დღით ადრე. მალე დაგიკავშირდებით დეტალების დასადასტურებლად.',
+              : 'შეკვეთა წარმატებით მიღებულია! მალე დაგიკავშირდებით დეტალების დასადასტურებლად.',
           {
             duration: 8000, // Show for 8 seconds
           }
@@ -658,7 +708,7 @@ export default function PartyMenuPage() {
     activeTab === 'birthday' ? organizeMenuIntoSections(filteredMenu) : null
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4">
+    <div className="min-h-screen bg-gray-50 p-4 pb-20">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="flex justify-between items-center mb-6">
@@ -704,7 +754,12 @@ export default function PartyMenuPage() {
               </div>
               <div>
                 <span className="font-medium">Date:</span>{' '}
-                {new Date(birthday.date).toLocaleDateString()}
+                {new Date(birthday.date).toLocaleDateString('en-US', {
+                  weekday: 'long',
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric',
+                })}
               </div>
             </div>
             <div className="mt-2">
@@ -713,7 +768,7 @@ export default function PartyMenuPage() {
                 {order.totalAmount} {t('gel')}
               </div>
             </div>
-            {order.isSubmitted && (
+            {order.isSubmitted && !hasUnsavedChanges && (
               <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded">
                 <p className="text-green-800 text-sm">
                   ✅{' '}
@@ -724,11 +779,11 @@ export default function PartyMenuPage() {
                   </strong>{' '}
                   {order.canModify
                     ? language === 'en'
-                      ? "You can still modify it until 1 day before your birthday. We'll contact you soon."
-                      : 'შეგიძლიათ კვლავ შეცვალოთ იგი დაბადების დღემდე 1 დღით ადრე. მალე დაგიკავშირდებით.'
+                      ? "We'll contact you soon to confirm the details."
+                      : 'მალე დაგიკავშირდებით დეტალების დასადასტურებლად.'
                     : language === 'en'
                       ? "The modification deadline has passed. We'll contact you soon to confirm the details."
-                      : 'შეცვლის ვადა ამოიწურა. მალე დაგიკავშირდებით დეტალების დასადასტურებლად.'}
+                      : 'შეცვლის ვადა ამოიწურა. მალე დაგიკავშირდებთ დეტალების დასადასტურებლად.'}
                 </p>
               </div>
             )}
@@ -893,7 +948,7 @@ export default function PartyMenuPage() {
 
           {/* Order Summary */}
           <div>
-            <Card className="sticky top-4 border-green-200">
+            <Card className="border-green-200">
               <CardHeader>
                 <CardTitle className="text-gray-800">Order Summary</CardTitle>
               </CardHeader>
@@ -1022,17 +1077,52 @@ export default function PartyMenuPage() {
                           </p>
                         </div>
 
+                        {/* Unsaved changes indicator */}
+                        {hasUnsavedChanges && (
+                          <div className="mt-4 p-3 bg-orange-50 border border-orange-200 rounded-lg">
+                            <p className="text-sm text-orange-800">
+                              <strong>
+                                {language === 'en'
+                                  ? '⚠️ You have unsaved changes'
+                                  : '⚠️ თქვენ გაქვთ შეუნახავი ცვლილებები'}
+                              </strong>
+                              <br />
+                              {language === 'en'
+                                ? 'Remember to save your order to confirm the changes.'
+                                : 'არ დაგავიწყდეთ შეკვეთის შენახვა ცვლილებების დასადასტურებლად.'}
+                            </p>
+                          </div>
+                        )}
+
                         <Button
                           onClick={submitOrder}
-                          disabled={!isOrderValid || submitting}
-                          className="w-full mt-4 bg-green-600 hover:bg-green-700 text-white transition-colors duration-200 shadow-sm hover:shadow-md disabled:bg-gray-400 disabled:hover:bg-gray-400"
+                          disabled={
+                            !isOrderValid ||
+                            submitting ||
+                            (order.isSubmitted && !hasUnsavedChanges)
+                          }
+                          className={`w-full mt-4 text-white transition-all duration-200 shadow-sm hover:shadow-md disabled:bg-gray-400 disabled:hover:bg-gray-400 ${
+                            hasUnsavedChanges
+                              ? 'bg-orange-600 hover:bg-orange-700 animate-pulse'
+                              : 'bg-green-600 hover:bg-green-700'
+                          }`}
                         >
                           {submitting ? (
                             <Loader2 className="h-4 w-4 animate-spin mr-2" />
                           ) : null}
-                          {order.isSubmitted
-                            ? t('updateOrder')
-                            : t('submitOrder')}
+                          {submitting
+                            ? language === 'en'
+                              ? 'Saving...'
+                              : 'შენახვა...'
+                            : hasUnsavedChanges
+                              ? language === 'en'
+                                ? 'Save Changes'
+                                : 'ცვლილებების შენახვა'
+                              : order.isSubmitted
+                                ? language === 'en'
+                                  ? 'No Changes to Save'
+                                  : 'ცვლილებები არ არის'
+                                : t('submitOrder')}
                         </Button>
                       </>
                     )}
@@ -1058,6 +1148,38 @@ export default function PartyMenuPage() {
           </div>
         </div>
       </div>
+
+      {/* Sticky Save Button - appears when there are unsaved changes */}
+      {hasUnsavedChanges && order?.canModify && (
+        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-50">
+          <div className="max-w-6xl mx-auto p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <div className="w-2 h-2 bg-orange-500 rounded-full animate-pulse"></div>
+                <span className="text-sm text-gray-700">
+                  {language === 'en'
+                    ? 'You have unsaved changes'
+                    : 'თქვენ გაქვთ შეუნახავი ცვლილებები'}
+                </span>
+              </div>
+              <Button
+                onClick={submitOrder}
+                disabled={
+                  !isOrderValid ||
+                  submitting ||
+                  (order.isSubmitted && !hasUnsavedChanges)
+                }
+                className="bg-orange-600 hover:bg-orange-700 text-white px-6 py-2 font-medium shadow-md hover:shadow-lg transition-all duration-200 disabled:bg-gray-400"
+              >
+                {submitting ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                ) : null}
+                {language === 'en' ? 'Save Changes' : 'ცვლილებების შენახვა'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

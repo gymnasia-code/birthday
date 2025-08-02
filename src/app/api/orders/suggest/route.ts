@@ -99,6 +99,10 @@ MENU KNOWLEDGE:
 - Hot dogs and burgers are single-person portions
 - Birthday cakes and desserts are typically shared
 
+IMPORTANT RULES:
+- If you order single-portion dishes (like hot dogs or burgers) for kids, make sure every kid gets one (equal quantity for all kids). Same applies for adults: if you order single-portion dishes for adults, every adult should get one. Do not give some kids/adults a single dish and others none.
+- If you include the champagne ceremony, its quantity should be equal to the number of kids.
+
 AVAILABLE MENU ITEMS:
 ${birthdayMenu
   .map(
@@ -119,7 +123,8 @@ INSTRUCTIONS:
 4. Consider Georgian preferences and birthday traditions
 5. Target total amount should be ${targetAmount} GEL (±200 GEL acceptable)
 6. Prioritize items that work well for groups and sharing
-7. Include champagne ceremony if kids are present (${kids} kids × 10 GEL = ${kids * 10} GEL)
+7. Include champagne ceremony if kids are present (${kids} kids × 10 GEL = ${kids * 10} GEL). If you include it, its quantity should be equal to amount of kids.
+8. For single-portion dishes, always order equal portions for all kids or all adults as appropriate
 
 RESPONSE FORMAT (JSON only):
 {

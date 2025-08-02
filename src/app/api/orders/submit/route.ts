@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { PartyOrder } from '@/types/party-menu'
+import { PartyOrder, Birthday } from '@/types/party-menu'
 import { logger } from '@/lib/utils/logger'
 import { getR2Storage } from '@/lib/utils/r2-storage'
 
@@ -9,13 +9,20 @@ interface Env {
   ORDERS_BUCKET: R2Bucket
 }
 
+interface OrderSubmissionRequest {
+  order: PartyOrder
+  birthday: Birthday
+}
+
 export async function POST(request: NextRequest) {
   try {
-    const order: PartyOrder = await request.json()
+    const { order, birthday }: OrderSubmissionRequest = await request.json()
 
     logger.serverInfo('Order submission received', {
       birthdayId: order.birthdayId,
       location: order.location,
+      kids: birthday.kidsQuantity || 0,
+      adults: birthday.adultsQuantity || 0,
       guests: order.guests,
       totalAmount: order.totalAmount,
       itemsCount: order.items.length,
@@ -73,7 +80,7 @@ export async function POST(request: NextRequest) {
 
     // Send Slack notification
     logger.serverDebug('Sending Slack notification')
-    await sendSlackNotification(order)
+    await sendSlackNotification(order, birthday)
     logger.serverInfo('Slack notification sent')
 
     logger.serverInfo('Order submission completed successfully', {
@@ -117,14 +124,48 @@ async function updateNotionOrderStatus(
   console.log('Updating Notion order status:', birthdayId, status)
 }
 
-async function sendSlackNotification(order: PartyOrder): Promise<void> {
-  // TODO: Implement Slack notification
+async function sendSlackNotification(
+  order: PartyOrder,
+  birthday: Birthday
+): Promise<void> {
   const slackWebhookUrl = process.env.SLACK_WEBHOOK_URL
 
   if (!slackWebhookUrl) {
     console.warn('Slack webhook URL not configured')
     return
   }
+
+  const itemsList = order.items
+    .map(
+      (item, idx) =>
+        `${idx + 1}. *${item.menuItem.title}* x${item.quantity} — ${item.menuItem.price * item.quantity} GEL`
+    )
+    .join('\n')
+
+  // Generate correct Notion document link using the actual page ID
+  let notionLink = '#'
+  if (birthday.notionPageId) {
+    // Format: https://www.notion.so/{workspace}/{page-title-slug-and-id}
+    const notionWorkspace = 'gymnasia' // This could be made configurable via env var
+    const pageIdFormatted = birthday.notionPageId.replace(/-/g, '')
+    // Create a slug from customer name or use 'birthday'
+    const titleSlug = birthday.customerName
+      ? birthday.customerName
+          .toLowerCase()
+          .replace(/[^a-z0-9]/g, '-')
+          .replace(/-+/g, '-')
+      : 'birthday'
+    notionLink = `https://www.notion.so/${notionWorkspace}/${titleSlug}-${pageIdFormatted}`
+  }
+
+  // Format date in a human-readable way
+  const birthdayDate = new Date(birthday.date)
+  const formattedDate = birthdayDate.toLocaleDateString('en-US', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  })
 
   const message = {
     text: `🎉 New birthday order submitted!`,
@@ -133,7 +174,32 @@ async function sendSlackNotification(order: PartyOrder): Promise<void> {
         type: 'section',
         text: {
           type: 'mrkdwn',
-          text: `*Birthday ID:* ${order.birthdayId}\n*Location:* ${order.location}\n*Guests:* ${order.guests}\n*Total Amount:* ${order.totalAmount} GEL`,
+          text: `*Birthday ID:* ${order.birthdayId}\n*Customer:* ${birthday.customerName || 'N/A'}\n*Location:* ${order.location}\n*Kids:* ${order.kids}\n*Adults:* ${order.adults}\n*Total Guests:* ${order.guests}\n*Total Amount:* ${order.totalAmount} GEL\n*Date:* ${formattedDate}`,
+        },
+      },
+      {
+        type: 'section',
+        text: {
+          type: 'mrkdwn',
+          text: `*Ordered Items:*\n${itemsList}`,
+        },
+      },
+      ...(order.notes
+        ? [
+            {
+              type: 'section',
+              text: {
+                type: 'mrkdwn',
+                text: `*Special Notes:*\n${order.notes}`,
+              },
+            },
+          ]
+        : []),
+      {
+        type: 'section',
+        text: {
+          type: 'mrkdwn',
+          text: `📋 <${notionLink}|View in Notion Database>`,
         },
       },
     ],

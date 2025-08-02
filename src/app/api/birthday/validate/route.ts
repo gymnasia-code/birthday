@@ -132,6 +132,7 @@ export async function GET(request: NextRequest) {
       program:
         (properties.Program as NotionProperty)?.rich_text?.[0]?.text?.content ||
         (properties.program as NotionProperty)?.rich_text?.[0]?.text?.content,
+      notionPageId: notionRecord.id, // Add the actual Notion page ID
     }
 
     logger.serverInfo('Birthday validation successful', {

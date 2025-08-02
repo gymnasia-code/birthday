@@ -158,6 +158,7 @@ export interface Birthday {
   kidsQuantity?: string
   adultsQuantity?: string
   program?: string
+  notionPageId?: string
 }
 
 // Notion API Types

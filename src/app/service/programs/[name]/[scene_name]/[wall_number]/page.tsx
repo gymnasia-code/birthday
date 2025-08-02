@@ -71,7 +71,7 @@ export default function WallPage({ params }: WallPageProps) {
         throw new Error(`Program config not found: ${programResponse.status}`)
       }
 
-      const program = await programResponse.json()
+      const program = (await programResponse.json()) as ProgramConfig
       console.log('✅ Program config loaded:', program)
       setProgramConfig(program)
 
@@ -84,7 +84,7 @@ export default function WallPage({ params }: WallPageProps) {
         throw new Error(`Scene config not found: ${sceneResponse.status}`)
       }
 
-      const scene = await sceneResponse.json()
+      const scene = (await sceneResponse.json()) as SceneConfig
       console.log('✅ Scene config loaded:', scene)
       setSceneConfig(scene)
     } catch (error) {
